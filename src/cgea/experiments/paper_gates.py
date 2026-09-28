@@ -12,7 +12,7 @@ class PaperAssertionError(RuntimeError):
     """Abort the entire campaign if a paper-run gate fails."""
 
 
-def assert_paper_config(cfg: DictConfig) -> None:
+def assert_paper_config(cfg: DictConfig, *, require_cuda: bool | None = None) -> None:
     allow_fb = bool(cfg.acoustic.get("allow_fallback", True))
     use_sionna = bool(cfg.acoustic.get("use_sionna_bridge", False))
     prefer = bool(cfg.acoustic.get("prefer_aubellhop", False))
@@ -25,8 +25,11 @@ def assert_paper_config(cfg: DictConfig) -> None:
         raise PaperAssertionError("prefer_aubellhop must be true for paper runs")
     if not use_gpu_phy:
         raise PaperAssertionError("use_gpu_phy must be true for paper runs")
-    if not torch.cuda.is_available():
-        raise PaperAssertionError("CUDA is required for paper runs (torch.cuda.is_available() is False)")
+    # CPU SimPy workers replay persisted GPU traces; they must not require a live GPU.
+    if require_cuda is None:
+        require_cuda = not bool(cfg.get("forbid_trace_generation", False))
+    if require_cuda and not torch.cuda.is_available():
+        raise PaperAssertionError("CUDA is required for paper PHY generation (torch.cuda.is_available() is False)")
 
 
 def assert_cuda_device(device: str | Any) -> None:

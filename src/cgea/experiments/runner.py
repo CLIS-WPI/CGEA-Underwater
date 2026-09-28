@@ -96,7 +96,18 @@ def ensure_trace(cfg: DictConfig, world_positions: dict[str, Position3D]) -> Any
     base_id = make_trace_id(engine.env.environment_id, int(cfg.seed), len(world_positions), duration)
     trace_id = f"{base_id}_gpu" if use_gpu_phy else base_id
     meta_path = store.meta_path(trace_id)
-    if meta_path.exists() and not bool(cfg.get("force_regenerate_trace", False)):
+    parquet_path = store.trace_path(trace_id)
+    traces_ready = meta_path.exists() and parquet_path.exists()
+    if bool(cfg.get("forbid_trace_generation", False)) and (
+        not traces_ready or bool(cfg.get("force_regenerate_trace", False))
+    ):
+        raise RuntimeError(
+            f"refusing to generate ChannelTrace {trace_id}; prebuild traces in the parent process first"
+        )
+    if (
+        traces_ready
+        and not bool(cfg.get("force_regenerate_trace", False))
+    ):
         meta = store.load_meta(trace_id)
         if paper_run:
             assert_trace_paper_meta(meta, require_gpu_phy=use_gpu_phy)

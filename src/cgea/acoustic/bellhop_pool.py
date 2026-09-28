@@ -49,7 +49,7 @@ def _bellhop_worker(job: dict[str, Any]) -> dict[str, Any]:
         "path_loss_db": real.propagation_loss_db,
         "propagation_delay_s": real.propagation_delay_s,
         "delay_spread_s": real.delay_spread_s,
-        "doppler_hz": 0.0,
+        "doppler_hz": None,
         "backend": real.backend,
         "n_paths": len(real.path_delays_s),
     }

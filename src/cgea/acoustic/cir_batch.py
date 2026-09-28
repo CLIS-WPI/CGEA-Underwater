@@ -79,7 +79,10 @@ def pack_realizations(
                 path_loss_db=np.asarray([r["path_loss_db"] for r in items], dtype=np.float64),
                 snr_db=np.asarray([r["snr_db"] for r in items], dtype=np.float64),
                 delay_spread_s=np.asarray([r["delay_spread_s"] for r in items], dtype=np.float64),
-                doppler_hz=np.asarray([r.get("doppler_hz", 0.0) for r in items], dtype=np.float64),
+                doppler_hz=np.asarray(
+                    [np.nan if r.get("doppler_hz") is None else r.get("doppler_hz") for r in items],
+                    dtype=np.float64,
+                ),
                 propagation_delay_s=np.asarray([r["propagation_delay_s"] for r in items], dtype=np.float64),
                 coeffs=torch.from_numpy(coeffs).to(device=device, dtype=cdtype),
                 delays=torch.from_numpy(delays).to(device=device, dtype=rdtype),

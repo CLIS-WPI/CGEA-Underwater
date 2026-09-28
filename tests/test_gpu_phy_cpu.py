@@ -23,7 +23,7 @@ def test_pack_buckets_do_not_global_pad():
                 "path_loss_db": 40.0,
                 "snr_db": 10.0,
                 "delay_spread_s": 0.01,
-                "doppler_hz": 0.0,
+                "doppler_hz": None,
                 "propagation_delay_s": 0.07,
                 "path_delays": [0.07 + 0.001 * i for i in range(n)],
                 "path_coefficients": [0.1 + 0.0j] * n,

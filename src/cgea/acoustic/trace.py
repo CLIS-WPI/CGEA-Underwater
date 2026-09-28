@@ -148,7 +148,9 @@ class ChannelTraceStore:
             )
         table = pa.Table.from_pylist(rows)
         out = self.trace_path(trace.trace_id)
-        pq.write_table(table, out)
+        tmp = out.with_suffix(".parquet.tmp")
+        pq.write_table(table, tmp)
+        tmp.replace(out)
         meta = {
             "trace_id": trace.trace_id,
             "environment_id": trace.environment_id,
@@ -337,7 +339,7 @@ def generate_mission_trace(
                     packet_success_probability=float(q["packet_success_probability"]),
                     link_available=bool(q["link_available"]),
                     snr_db=float(q["snr_db"]),
-                    doppler_hz=0.0,
+                    doppler_hz=None,
                     delay_spread_s=float(q["delay_spread_s"]),
                 )
             )

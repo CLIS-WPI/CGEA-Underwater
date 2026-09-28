@@ -152,7 +152,7 @@ def evaluate_packed_on_gpu(
                     "path_loss_db": float(packed.path_loss_db[idx]),
                     "snr_db": float(packed.snr_db[idx]),
                     "delay_spread_s": float(packed.delay_spread_s[idx]),
-                    "doppler_hz": float(packed.doppler_hz[idx]),
+                    "doppler_hz": None,
                     "propagation_delay_s": float(packed.propagation_delay_s[idx]),
                     "packet_success_probability": float(psp[i]),
                     "effective_rate_bps": float(rate[i]),

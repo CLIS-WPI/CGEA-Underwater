@@ -17,6 +17,7 @@ import os
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,8 +26,14 @@ from omegaconf import OmegaConf
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from cgea.experiments.runner import ensure_trace, run_single
-from cgea.metrics import summarize_runs
+from cgea.experiments.parallel import (
+    cfg_to_container,
+    metrics_from_worker,
+    resolve_simpy_workers,
+    run_simpy_jobs,
+)
+from cgea.experiments.runner import ensure_trace
+from cgea.metrics import RunMetrics, summarize_runs
 from cgea.mission import CONSEQUENTIAL_ACTIONS, build_pipeline_mission
 from cgea.types import config_hash, git_commit
 
@@ -106,83 +113,121 @@ def prebuild_traces(cfg) -> dict[int, str]:
     return ids
 
 
-def run_campaign(cfg, trace_ids: dict[int, str]) -> list[dict]:
-    rows = []
-    for seed in SEEDS:
+def _cfg_run(cfg, seed: int, ocfg: dict) -> Any:
+    return OmegaConf.merge(
+        cfg,
+        {
+            "seed": int(seed),
+            "scenario": {
+                "outage_disabled": ocfg["outage_disabled"],
+                "outage_start_s": ocfg["outage_start_s"],
+                "outage_end_s": ocfg["outage_end_s"],
+                "partition_groups": None,
+            },
+            "experiment": {"name": str(cfg.experiment.name)},
+            "force_regenerate_trace": False,
+            "forbid_trace_generation": True,
+        },
+    )
+
+
+def iter_campaign_jobs(cfg, trace_ids: dict[int, str], seeds=None) -> list[dict]:
+    seeds = list(SEEDS if seeds is None else seeds)
+    jobs = []
+    for seed in seeds:
         for outage_name, ocfg in OUTAGES.items():
             for baseline in BASELINES:
-                cfg_run = OmegaConf.merge(
-                    cfg,
+                cfg_run = _cfg_run(cfg, seed, ocfg)
+                jobs.append(
                     {
                         "seed": int(seed),
-                        "scenario": {
-                            "outage_disabled": ocfg["outage_disabled"],
-                            "outage_start_s": ocfg["outage_start_s"],
-                            "outage_end_s": ocfg["outage_end_s"],
-                            "partition_groups": None,
-                        },
-                        "experiment": {"name": CAMPAIGN},
-                    },
+                        "outage": outage_name,
+                        "outage_duration_s": ocfg["duration_s"],
+                        "baseline": baseline,
+                        "expected_trace_id": trace_ids[seed],
+                        "cfg": cfg_to_container(cfg_run),
+                    }
                 )
-                print(
-                    f"[run] baseline={baseline} outage={outage_name}({ocfg['duration_s']}s) seed={seed}",
-                    flush=True,
-                )
-                m = run_single(cfg_run, baseline)
-                if m.provenance.channel_trace_id != trace_ids[seed]:
-                    raise RuntimeError(
-                        f"Trace mismatch: expected {trace_ids[seed]}, got {m.provenance.channel_trace_id}"
-                    )
-                cov = m.extra.get("action_opportunity_coverage", {})
-                row = {
-                    "baseline": baseline,
-                    "outage": outage_name,
-                    "outage_duration_s": ocfg["duration_s"],
-                    "seed": seed,
-                    "trace_id": m.provenance.channel_trace_id,
-                    "config_hash": m.provenance.configuration_hash,
-                    "git_commit": m.provenance.git_commit,
-                    "mission_completion_ratio": m.mission_completion_ratio,
-                    "mission_utility": m.mission_utility,
-                    "high_risk_action_count": m.extra.get("high_risk_action_count", 0),
-                    "high_risk_action_rate": m.unauthorized_high_risk_action_rate,
-                    "false_denial_count": m.extra.get("false_denial_count", 0),
-                    "false_denial_rate": m.governance_false_denial_rate,
-                    "useful_consequential_retention": m.extra.get(
-                        "useful_consequential_retention", m.useful_action_retention
-                    ),
-                    "useful_consequential_proposed": m.extra.get("useful_consequential_proposed", 0),
-                    "useful_consequential_allowed": m.extra.get("useful_consequential_allowed", 0),
-                    "denied_consequential_count": m.extra.get("denied_consequential_count", 0),
-                    "total_communication_bytes": m.total_communication_bytes,
-                    "governance_bytes": m.governance_bytes,
-                    "gco": m.governance_communication_overhead,
-                    "energy_propulsion_j": m.energy_propulsion_j,
-                    "energy_communication_j": m.energy_communication_j,
-                    "energy_compute_j": m.energy_compute_j,
-                    "decisions_allow": m.extra.get("decisions_allow", 0),
-                    "decisions_deny": m.extra.get("decisions_deny", 0),
-                    "decisions_defer": m.extra.get("decisions_defer", 0),
-                    "consequential_proposed": m.extra.get("consequential_proposed", 0),
-                    "consequential_allowed": m.extra.get("consequential_allowed", 0),
-                    "n_exercised_consequential_classes": cov.get("n_exercised_consequential_classes", 0),
-                    "valid_coverage": cov.get("valid_coverage", False),
-                    "exercised_classes": json.dumps(cov.get("exercised_consequential_classes", [])),
-                    "coverage_by_class": json.dumps(cov.get("by_class", {})),
-                    "coverage_by_connectivity": json.dumps(cov.get("by_connectivity", {})),
-                    "coverage_by_freshness": json.dumps(cov.get("by_freshness", {})),
-                    "utility_breakdown": json.dumps(m.extra.get("utility_breakdown", {})),
-                    "utility_freeze_id": m.extra.get("utility_freeze_id"),
-                    "connectivity_occupancy": json.dumps(m.extra.get("connectivity_state_occupancy", {})),
-                    "proposed_by_type": json.dumps(m.extra.get("proposed_by_type", {})),
-                    "decision_by_type": json.dumps(m.extra.get("decision_by_type", {})),
-                    "decision_by_risk_class": json.dumps(m.extra.get("decision_by_risk_class", {})),
-                    "backend": m.extra.get("trace_backend"),
-                    "allow_fallback": m.extra.get("allow_fallback"),
-                    "use_sionna_bridge": m.extra.get("use_sionna_bridge"),
-                    "sionna_device": m.extra.get("sionna_device"),
-                }
-                rows.append(row)
+    return jobs
+
+
+def metrics_to_row(m: RunMetrics, *, outage_name: str, outage_duration_s: float, seed: int) -> dict:
+    cov = m.extra.get("action_opportunity_coverage", {})
+    return {
+        "baseline": m.provenance.baseline,
+        "outage": outage_name,
+        "outage_duration_s": outage_duration_s,
+        "seed": seed,
+        "trace_id": m.provenance.channel_trace_id,
+        "config_hash": m.provenance.configuration_hash,
+        "git_commit": m.provenance.git_commit,
+        "mission_completion_ratio": m.mission_completion_ratio,
+        "mission_utility": m.mission_utility,
+        "high_risk_action_count": m.extra.get("high_risk_action_count", 0),
+        "high_risk_action_rate": m.unauthorized_high_risk_action_rate,
+        "false_denial_count": m.extra.get("false_denial_count", 0),
+        "false_denial_rate": m.governance_false_denial_rate,
+        "useful_consequential_retention": m.extra.get(
+            "useful_consequential_retention", m.useful_action_retention
+        ),
+        "useful_consequential_proposed": m.extra.get("useful_consequential_proposed", 0),
+        "useful_consequential_allowed": m.extra.get("useful_consequential_allowed", 0),
+        "denied_consequential_count": m.extra.get("denied_consequential_count", 0),
+        "total_communication_bytes": m.total_communication_bytes,
+        "governance_bytes": m.governance_bytes,
+        "gco": m.governance_communication_overhead,
+        "energy_propulsion_j": m.energy_propulsion_j,
+        "energy_communication_j": m.energy_communication_j,
+        "energy_compute_j": m.energy_compute_j,
+        "decisions_allow": m.extra.get("decisions_allow", 0),
+        "decisions_deny": m.extra.get("decisions_deny", 0),
+        "decisions_defer": m.extra.get("decisions_defer", 0),
+        "consequential_proposed": m.extra.get("consequential_proposed", 0),
+        "consequential_allowed": m.extra.get("consequential_allowed", 0),
+        "n_exercised_consequential_classes": cov.get("n_exercised_consequential_classes", 0),
+        "valid_coverage": cov.get("valid_coverage", False),
+        "exercised_classes": json.dumps(cov.get("exercised_consequential_classes", [])),
+        "coverage_by_class": json.dumps(cov.get("by_class", {})),
+        "coverage_by_connectivity": json.dumps(cov.get("by_connectivity", {})),
+        "coverage_by_freshness": json.dumps(cov.get("by_freshness", {})),
+        "utility_breakdown": json.dumps(m.extra.get("utility_breakdown", {})),
+        "utility_freeze_id": m.extra.get("utility_freeze_id"),
+        "connectivity_occupancy": json.dumps(m.extra.get("connectivity_state_occupancy", {})),
+        "proposed_by_type": json.dumps(m.extra.get("proposed_by_type", {})),
+        "decision_by_type": json.dumps(m.extra.get("decision_by_type", {})),
+        "decision_by_risk_class": json.dumps(m.extra.get("decision_by_risk_class", {})),
+        "backend": m.extra.get("trace_backend"),
+        "allow_fallback": m.extra.get("allow_fallback"),
+        "use_sionna_bridge": m.extra.get("use_sionna_bridge"),
+        "sionna_device": m.extra.get("sionna_device"),
+    }
+
+
+def run_campaign(cfg, trace_ids: dict[int, str], max_workers: int | None = None) -> list[dict]:
+    jobs = iter_campaign_jobs(cfg, trace_ids)
+    workers = resolve_simpy_workers(requested=max_workers)
+    print(f"[simpy] {len(jobs)} independent replays, workers={workers} (spawn ProcessPool)", flush=True)
+
+    def _progress(i: int, payload: dict) -> None:
+        print(
+            f"[run] baseline={payload['baseline']} outage={payload['outage']} "
+            f"seed={payload['seed']} elapsed={payload['elapsed_s']:.1f}s pid={payload['pid']}",
+            flush=True,
+        )
+
+    payloads = run_simpy_jobs(jobs, max_workers=workers, on_complete=_progress)
+
+    rows = []
+    for job, payload in zip(jobs, payloads):
+        m = metrics_from_worker(payload)
+        rows.append(
+            metrics_to_row(
+                m,
+                outage_name=str(job["outage"]),
+                outage_duration_s=float(job["outage_duration_s"]),
+                seed=int(job["seed"]),
+            )
+        )
     return rows
 
 
@@ -517,6 +562,7 @@ def critical_interpretation(rows: list[dict], coverage: dict, out_dir: Path) -> 
 
 def main() -> None:
     cfg = load_base_cfg()
+    cfg.experiment.name = CAMPAIGN
     out_dir = Path(cfg.paths.results) / CAMPAIGN
     out_dir.mkdir(parents=True, exist_ok=True)
     print("git_commit", git_commit(ROOT))
@@ -538,8 +584,10 @@ def main() -> None:
         )
     )
 
+    print("[gpu] Bellhop/CIR + Sionna PHY traces (parent process only)", flush=True)
     trace_ids = prebuild_traces(cfg)
     (out_dir / "shared_trace_ids.json").write_text(json.dumps(trace_ids, indent=2))
+    print("[simpy] traces persisted; CPU process pool will only replay parquet", flush=True)
 
     rows = run_campaign(cfg, trace_ids)
     write_tables(rows, out_dir)

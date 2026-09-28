@@ -11,7 +11,7 @@
   "gpu_phy": true,
   "doppler_mode": "not_modeled",
   "trace_family": "gpu_phy",
-  "git_commit": "97b1aa99b591050ef68bdaef0f649ae7c29f0e65",
+  "git_commit": "unknown",
   "n_nodes": 13,
   "duration_s": 1400.0,
   "torch_version": "2.9.1+cu126",
@@ -45,9 +45,9 @@
   },
   "phy_config_hash": "c51664217f1cd507",
   "runtime_s": {
-    "bellhop_parallel": 8.447842054069042,
-    "gpu_phy": 0.06454422697424889,
-    "total": 8.533346490003169
+    "bellhop_parallel": 8.42928319144994,
+    "gpu_phy": 0.8997328327968717,
+    "total": 9.461297400295734
   },
   "n_links": 156,
   "n_times": 21,

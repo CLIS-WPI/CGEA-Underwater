@@ -53,5 +53,6 @@
   "n_times": 21,
   "gpu_peak_memory_bytes": 11287476736,
   "doppler_limitation": "GPU PHY uses a static Bellhop CIR (multipath, attenuation, delay). Along-path Doppler is not applied to OFDM symbols.",
-  "note": "B1-B5 must replay this same persisted trace; SimPy does not recompute PHY."
+  "note": "B1-B5 must replay this same persisted trace; SimPy does not recompute PHY.",
+  "doppler_hz_semantics": "null means not modeled; do not interpret as 0 Hz"
 }
