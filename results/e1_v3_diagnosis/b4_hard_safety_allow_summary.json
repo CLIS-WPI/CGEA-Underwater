@@ -1,0 +1,45 @@
+{
+  "n_b4_runs": 54,
+  "n_hard_safety_allow": 3448,
+  "by_action_type": {
+    "enter_exclusion_zone": 236,
+    "exceed_return_energy_reserve": 162,
+    "abandon_mandatory_inspection": 3010,
+    "change_high_level_objective": 40
+  },
+  "by_freshness": {
+    "fresh": 3320,
+    "aging": 128
+  },
+  "by_connectivity": {
+    "DEGRADED": 2144,
+    "PARTITIONED": 1304
+  },
+  "by_action_freshness_reason": {
+    "abandon_mandatory_inspection|fresh|ALLOW_AUTHORIZED": 3010,
+    "exceed_return_energy_reserve|fresh|ALLOW_AUTHORIZED": 162,
+    "enter_exclusion_zone|aging|ALLOW_AUTHORIZED": 128,
+    "enter_exclusion_zone|fresh|ALLOW_AUTHORIZED": 108,
+    "change_high_level_objective|fresh|ALLOW_AUTHORIZED": 40
+  },
+  "capsule_policy_note": {
+    "issue_capsule_broad": true,
+    "fresh_forbidden_actions_empty": true,
+    "aging_remove_actions": [
+      "change_high_level_objective",
+      "abandon_mandatory_inspection",
+      "reassign_another_auv"
+    ],
+    "aging_does_not_remove": [
+      "enter_exclusion_zone",
+      "exceed_return_energy_reserve"
+    ],
+    "oracle_violates_frozen_risk": [
+      "enter_exclusion_zone",
+      "exceed_return_energy_reserve",
+      "abandon_mandatory_inspection",
+      "change_high_level_objective"
+    ],
+    "oracle_reassign_not_hard_safety": true
+  }
+}
