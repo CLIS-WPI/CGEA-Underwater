@@ -10,7 +10,7 @@ from cgea.types import Position3D
 
 
 def test_sionna_channel_shapes():
-    eng = BellhopEngine(AcousticEnvironment(seed=0), prefer_aubellhop=False)
+    eng = BellhopEngine(AcousticEnvironment(seed=0), prefer_aubellhop=False, allow_fallback=True)
     tx = Position3D(x=0, y=0, z=40)
     rx = Position3D(x=1000, y=0, z=60)
     real = eng.compute_channel("tx", "rx", tx, rx, seed=0)

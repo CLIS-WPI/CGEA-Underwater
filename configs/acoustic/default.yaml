@@ -1,10 +1,17 @@
-environment_id: default_ssp_200m
+# FROZEN acoustic parameters for paper validation runs.
+# Do not change mid-experiment. Unit tests may override allow_fallback locally.
+environment_id: paper_ssp_200m_v1
 water_depth_m: 200.0
 carrier_frequency_hz: 25000.0
 bandwidth_hz: 5000.0
-noise_psd_dbm_hz: -80.0
-tx_power_dbm: 180.0
+# Link budget uses Bellhop TL: SNR ≈ tx_power - TL - noise.
+# Tuned so PSP/rate decay with range under frozen geometry.
+noise_psd_dbm_hz: -50.0
+tx_power_dbm: 60.0
+snr_threshold_db: 12.0
 prefer_aubellhop: true
+allow_fallback: false          # CRITICAL: paper runs must never use image-multipath
+use_sionna_bridge: true        # CRITICAL: Bellhop paths must enter Sionna ChannelModel
 
 ssp:
   depths_m: [0.0, 50.0, 100.0, 200.0]

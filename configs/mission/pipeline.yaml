@@ -1,3 +1,4 @@
+# FROZEN paper mission geometry — do not change mid-experiment sweep.
 mission_id: pipeline_inspection_v1
 n_auvs: 12
 pipeline_length_m: 2400.0

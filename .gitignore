@@ -6,11 +6,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
-results/**
-!results/.gitkeep
-traces/**
-!traces/.gitkeep
 .hydra/
 outputs/
-*.parquet
 .ipynb_checkpoints/
+src/cgea.egg-info/

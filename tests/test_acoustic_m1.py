@@ -9,7 +9,7 @@ from cgea.types import Position3D
 
 
 def test_increasing_range_increases_delay():
-    eng = BellhopEngine(AcousticEnvironment(seed=0), prefer_aubellhop=False)
+    eng = BellhopEngine(AcousticEnvironment(seed=0), prefer_aubellhop=False, allow_fallback=True)
     tx = Position3D(x=0, y=0, z=50)
     rx_near = Position3D(x=500, y=0, z=60)
     rx_far = Position3D(x=2000, y=0, z=60)
@@ -19,7 +19,7 @@ def test_increasing_range_increases_delay():
 
 
 def test_depth_change_modifies_paths():
-    eng = BellhopEngine(AcousticEnvironment(seed=1), prefer_aubellhop=False)
+    eng = BellhopEngine(AcousticEnvironment(seed=1), prefer_aubellhop=False, allow_fallback=True)
     tx = Position3D(x=0, y=0, z=20)
     rx_shallow = Position3D(x=1000, y=0, z=30)
     rx_deep = Position3D(x=1000, y=0, z=150)
@@ -30,7 +30,7 @@ def test_depth_change_modifies_paths():
 
 
 def test_reproducible_with_same_seed():
-    eng = BellhopEngine(AcousticEnvironment(seed=7), prefer_aubellhop=False)
+    eng = BellhopEngine(AcousticEnvironment(seed=7), prefer_aubellhop=False, allow_fallback=True)
     tx = Position3D(x=0, y=0, z=40)
     rx = Position3D(x=800, y=0, z=70)
     a = eng.compute_channel("tx", "rx", tx, rx, seed=7)
@@ -57,6 +57,6 @@ def test_environment_change_modifies_channel():
         seed=0,
         environment_id="grad200",
     )
-    c1 = BellhopEngine(e1, prefer_aubellhop=False).compute_channel("a", "b", tx, rx, seed=0)
-    c2 = BellhopEngine(e2, prefer_aubellhop=False).compute_channel("a", "b", tx, rx, seed=0)
+    c1 = BellhopEngine(e1, prefer_aubellhop=False, allow_fallback=True).compute_channel("a", "b", tx, rx, seed=0)
+    c2 = BellhopEngine(e2, prefer_aubellhop=False, allow_fallback=True).compute_channel("a", "b", tx, rx, seed=0)
     assert c1.arrivals != c2.arrivals or c1.propagation_loss_db != c2.propagation_loss_db

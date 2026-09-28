@@ -60,7 +60,11 @@ def _env_from_cfg(cfg: DictConfig) -> AcousticEnvironment:
 def ensure_trace(cfg: DictConfig, world_positions: dict[str, Position3D]) -> Any:
     """Generate or load the shared ChannelTrace. Never regenerate per baseline."""
     store = ChannelTraceStore(Path(cfg.paths.traces))
-    engine = BellhopEngine(_env_from_cfg(cfg), prefer_aubellhop=bool(cfg.acoustic.get("prefer_aubellhop", True)))
+    engine = BellhopEngine(
+        _env_from_cfg(cfg),
+        prefer_aubellhop=bool(cfg.acoustic.get("prefer_aubellhop", True)),
+        allow_fallback=bool(cfg.acoustic.get("allow_fallback", False)),
+    )
     duration = float(cfg.mission.duration_s)
     dt = float(cfg.mission.channel_sample_dt_s)
     times = list(np.arange(0.0, duration + 1e-9, dt))
@@ -80,9 +84,10 @@ def ensure_trace(cfg: DictConfig, world_positions: dict[str, Position3D]) -> Any
         noise_psd_dbm_hz=float(cfg.acoustic.noise_psd_dbm_hz),
         bandwidth_hz=float(cfg.acoustic.bandwidth_hz),
         tx_power_dbm=float(cfg.acoustic.tx_power_dbm),
+        use_sionna_bridge=bool(cfg.acoustic.get("use_sionna_bridge", True)),
+        snr_threshold_db=float(cfg.acoustic.get("snr_threshold_db", 12.0)),
     )
-    # Force stable ID
-    object.__setattr__(trace, "trace_id", trace_id) if False else None
+    # Force stable ID matching make_trace_id above
     trace.trace_id = trace_id
     store.save(trace)
     return trace

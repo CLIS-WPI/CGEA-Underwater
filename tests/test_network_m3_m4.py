@@ -13,7 +13,7 @@ from cgea.types import Position3D
 
 
 def _mini_trace(tmp_path: Path):
-    eng = BellhopEngine(AcousticEnvironment(seed=0, environment_id="test_env"), prefer_aubellhop=False)
+    eng = BellhopEngine(AcousticEnvironment(seed=0, environment_id="test_env"), prefer_aubellhop=False, allow_fallback=True)
     positions = {
         "gw0": Position3D(x=0, y=0, z=0),
         "auv_00": Position3D(x=200, y=0, z=50),

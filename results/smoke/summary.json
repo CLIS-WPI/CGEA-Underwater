@@ -1,0 +1,158 @@
+{
+  "B1": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 1.0
+    },
+    "unauthorized_high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "governance_communication_overhead": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "mission_utility": {
+      "mean": 3.99916,
+      "std": 0.0,
+      "ci95_low": 3.99916,
+      "ci95_high": 3.99916,
+      "n": 1.0
+    },
+    "n": 1
+  },
+  "B2": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 1.0
+    },
+    "unauthorized_high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "governance_communication_overhead": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "mission_utility": {
+      "mean": 3.99916,
+      "std": 0.0,
+      "ci95_low": 3.99916,
+      "ci95_high": 3.99916,
+      "n": 1.0
+    },
+    "n": 1
+  },
+  "B3": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 1.0
+    },
+    "unauthorized_high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "governance_communication_overhead": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "mission_utility": {
+      "mean": 3.99916,
+      "std": 0.0,
+      "ci95_low": 3.99916,
+      "ci95_high": 3.99916,
+      "n": 1.0
+    },
+    "n": 1
+  },
+  "B4": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 1.0
+    },
+    "unauthorized_high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "governance_communication_overhead": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "mission_utility": {
+      "mean": 3.99916,
+      "std": 0.0,
+      "ci95_low": 3.99916,
+      "ci95_high": 3.99916,
+      "n": 1.0
+    },
+    "n": 1
+  },
+  "B5": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 1.0
+    },
+    "unauthorized_high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "governance_communication_overhead": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 1.0
+    },
+    "mission_utility": {
+      "mean": 3.99916,
+      "std": 0.0,
+      "ci95_low": 3.99916,
+      "ci95_high": 3.99916,
+      "n": 1.0
+    },
+    "n": 1
+  },
+  "effect_size_B4_vs_B5_unauth": NaN
+}

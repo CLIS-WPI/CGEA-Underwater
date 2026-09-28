@@ -68,19 +68,18 @@ def realization_to_link_quality(
     tx_power_dbm: float = 180.0,
     snr_threshold_db: float = 5.0,
 ) -> dict[str, float | bool]:
-    """Map acoustic channel state → delay, availability, throughput, P(success)."""
-    # Approximate received power from strongest path
-    strongest = max((abs(c) for c in realization.path_coefficients), default=0.0)
-    # amplitude is linear pressure-like; convert to relative SNR proxy
-    rx_power_db = tx_power_dbm + 20.0 * np.log10(max(strongest, 1e-30))
-    noise_power_db = noise_psd_dbm_hz + 10.0 * np.log10(bandwidth_hz)
-    snr_db = float(rx_power_db - noise_power_db)
+    """Map acoustic channel state → delay, availability, throughput, P(success).
 
-    # Packet success via logistic of SNR
+    SNR uses Bellhop path-loss (TL) as the primary physical quantity:
+        SNR ≈ tx_power - TL - noise
+    """
+    tl_db = float(realization.propagation_loss_db)
+    noise_power_db = noise_psd_dbm_hz + 10.0 * np.log10(bandwidth_hz)
+    snr_db = float(tx_power_dbm - tl_db - noise_power_db)
+
     psp = float(1.0 / (1.0 + np.exp(-(snr_db - snr_threshold_db) / 2.0)))
     link_available = bool(snr_db >= snr_threshold_db and psp >= 0.1)
 
-    # Shannon-like effective rate capped by acoustic modem-ish bandwidth
     snr_lin = 10 ** (snr_db / 10.0)
     rate = float(bandwidth_hz * np.log2(1.0 + max(snr_lin, 0.0)))
     if not link_available:
@@ -193,6 +192,58 @@ def make_trace_id(environment_id: str, seed: int, n_nodes: int, duration_s: floa
     return "tr_" + hashlib.sha256(raw.encode()).hexdigest()[:12]
 
 
+def sionna_link_quality_from_realization(
+    realization: ChannelRealization,
+    noise_psd_dbm_hz: float = -80.0,
+    bandwidth_hz: float = 5000.0,
+    tx_power_dbm: float = 180.0,
+    snr_threshold_db: float = 5.0,
+    batch_size: int = 8,
+) -> dict[str, float | bool]:
+    """Bellhop → UnderwaterAcousticChannel(Sionna) → link quality.
+
+    This is the paper path: path coefficients/delays enter the Sionna ChannelModel
+    API on GPU (when available); quality metrics are derived from returned tensors.
+    """
+    from cgea.sionna_ext.channel_model import UnderwaterAcousticChannel
+
+    channel = UnderwaterAcousticChannel(realization=realization)
+    a, tau = channel(batch_size=batch_size, num_time_steps=1, sampling_frequency=bandwidth_hz)
+
+    # Confirm Bellhop paths entered Sionna tensors
+    assert a.shape[-2] == len(realization.path_coefficients)
+    prop_delay = float(tau.amin(dim=-1).mean().detach().cpu())
+    delays = tau[0, 0, 0].detach().cpu().numpy()
+    # Path powers from Sionna coefficients for delay spread
+    path_amp = a.abs().mean(dim=(0, 1, 2, 3, 4, 6))  # [paths]
+    powers = (path_amp.detach().cpu().numpy() ** 2)
+    powers = powers / max(powers.sum(), 1e-30)
+    mean_delay = float(np.sum(powers * delays))
+    delay_spread = float(np.sqrt(max(np.sum(powers * (delays - mean_delay) ** 2), 0.0)))
+
+    # Link budget from Bellhop TL (physical), after Sionna bridge of CIR
+    tl_db = float(realization.propagation_loss_db)
+    noise_power_db = noise_psd_dbm_hz + 10.0 * np.log10(bandwidth_hz)
+    snr_db = float(tx_power_dbm - tl_db - noise_power_db)
+    psp = float(1.0 / (1.0 + np.exp(-(snr_db - snr_threshold_db) / 2.0)))
+    link_available = bool(snr_db >= snr_threshold_db and psp >= 0.1)
+    snr_lin = 10 ** (snr_db / 10.0)
+    rate = float(bandwidth_hz * np.log2(1.0 + max(snr_lin, 0.0)))
+    if not link_available:
+        rate = 0.0
+        psp = min(psp, 0.05)
+
+    return {
+        "snr_db": snr_db,
+        "estimated_rate_bps": rate,
+        "packet_success_probability": psp,
+        "link_available": link_available,
+        "propagation_delay_s": prop_delay,
+        "delay_spread_s": delay_spread,
+        "sionna_bridged": True,
+    }
+
+
 def generate_mission_trace(
     engine: BellhopEngine,
     node_positions: dict[str, Position3D],
@@ -201,49 +252,75 @@ def generate_mission_trace(
     noise_psd_dbm_hz: float = -80.0,
     bandwidth_hz: float = 5000.0,
     tx_power_dbm: float = 180.0,
+    use_sionna_bridge: bool = True,
+    snr_threshold_db: float = 12.0,
 ) -> ChannelTrace:
     """Generate one shared ChannelTrace for all directed links over time.
 
+    Paper path: Bellhop → Sionna UnderwaterAcousticChannel → link quality.
     DO NOT regenerate separately per baseline — call once and replay.
     """
+    backends: set[str] = set()
     trace_id = make_trace_id(
         engine.env.environment_id, seed, len(node_positions), float(times[-1] if times else 0.0)
     )
     samples: list[LinkSample] = []
     node_ids = list(node_positions.keys())
-    for t in times:
-        for i, tx in enumerate(node_ids):
-            for j, rx in enumerate(node_ids):
-                if i == j:
-                    continue
-                realization = engine.compute_channel(
-                    tx, rx, node_positions[tx], node_positions[rx], seed=seed
+    # Positions are frozen for paper runs: compute each directed link once, replay over time.
+    link_cache: dict[tuple[str, str], tuple] = {}
+    for i, tx in enumerate(node_ids):
+        for j, rx in enumerate(node_ids):
+            if i == j:
+                continue
+            realization = engine.compute_channel(
+                tx, rx, node_positions[tx], node_positions[rx], seed=seed
+            )
+            backends.add(realization.backend)
+            if use_sionna_bridge:
+                q = sionna_link_quality_from_realization(
+                    realization,
+                    noise_psd_dbm_hz=noise_psd_dbm_hz,
+                    bandwidth_hz=bandwidth_hz,
+                    tx_power_dbm=tx_power_dbm,
+                    snr_threshold_db=snr_threshold_db,
                 )
+            else:
                 q = realization_to_link_quality(
                     realization,
                     noise_psd_dbm_hz=noise_psd_dbm_hz,
                     bandwidth_hz=bandwidth_hz,
                     tx_power_dbm=tx_power_dbm,
+                    snr_threshold_db=snr_threshold_db,
                 )
-                samples.append(
-                    LinkSample(
-                        timestamp=float(t),
-                        tx_id=tx,
-                        rx_id=rx,
-                        tx_position=node_positions[tx],
-                        rx_position=node_positions[rx],
-                        distance_m=realization.range_m,
-                        path_delays=realization.path_delays_s,
-                        path_coefficients=realization.path_coefficients,
-                        propagation_delay_s=float(q["propagation_delay_s"]),
-                        estimated_rate_bps=float(q["estimated_rate_bps"]),
-                        packet_success_probability=float(q["packet_success_probability"]),
-                        link_available=bool(q["link_available"]),
-                        snr_db=float(q["snr_db"]),
-                        doppler_hz=0.0,
-                        delay_spread_s=float(q["delay_spread_s"]),
-                    )
+            link_cache[(tx, rx)] = (realization, q)
+
+    for t in times:
+        for (tx, rx), (realization, q) in link_cache.items():
+            samples.append(
+                LinkSample(
+                    timestamp=float(t),
+                    tx_id=tx,
+                    rx_id=rx,
+                    tx_position=node_positions[tx],
+                    rx_position=node_positions[rx],
+                    distance_m=realization.range_m,
+                    path_delays=realization.path_delays_s,
+                    path_coefficients=realization.path_coefficients,
+                    propagation_delay_s=float(q["propagation_delay_s"]),
+                    estimated_rate_bps=float(q["estimated_rate_bps"]),
+                    packet_success_probability=float(q["packet_success_probability"]),
+                    link_available=bool(q["link_available"]),
+                    snr_db=float(q["snr_db"]),
+                    doppler_hz=0.0,
+                    delay_spread_s=float(q["delay_spread_s"]),
                 )
+            )
+
+    if not engine.allow_fallback and backends and backends != {"aubellhop"}:
+        raise RuntimeError(
+            f"Paper traces must use aubellhop only; got backends={sorted(backends)}"
+        )
+
     return ChannelTrace(
         trace_id=trace_id,
         environment_id=engine.env.environment_id,

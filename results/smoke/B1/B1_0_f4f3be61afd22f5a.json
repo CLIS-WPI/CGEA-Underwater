@@ -1,0 +1,29 @@
+{
+  "mission_completion_ratio": 1.0,
+  "mission_utility": 3.99916,
+  "unauthorized_high_risk_action_rate": 0.0,
+  "governance_false_denial_rate": 0.0,
+  "useful_action_retention": 1.0,
+  "governance_bytes": 0,
+  "total_communication_bytes": 0,
+  "governance_communication_overhead": 0.0,
+  "reconciliation_latency_s": 0.0,
+  "conflict_count": 0,
+  "energy_propulsion_j": 420.0,
+  "energy_communication_j": 0.0,
+  "energy_compute_j": 420.0,
+  "provenance": {
+    "git_commit": "unknown",
+    "configuration_hash": "f4f3be61afd22f5a",
+    "random_seed": 0,
+    "baseline": "B1",
+    "channel_trace_id": "tr_c6cda2f2e157",
+    "environment_id": "default_ssp_200m",
+    "notes": ""
+  },
+  "extra": {
+    "decisions_allow": 24,
+    "decisions_deny": 0,
+    "consequential_proposed": 0
+  }
+}

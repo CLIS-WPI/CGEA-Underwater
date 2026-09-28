@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import hashlib
 import math
-import tempfile
 from pathlib import Path
 from typing import Any, Literal
 
@@ -85,6 +84,7 @@ class ChannelRealization(CgeaBaseModel):
     delay_spread_s: float
     cir_time_s: list[float] = Field(default_factory=list)
     cir_complex: list[complex] = Field(default_factory=list)
+    backend: str = "unknown"
 
     model_config = {"arbitrary_types_allowed": True, "extra": "forbid"}
 
@@ -154,16 +154,23 @@ def _image_path(
 
 
 class BellhopEngine:
-    """Generate underwater acoustic arrivals via aubellhop, with deterministic fallback.
+    """Generate underwater acoustic arrivals via aubellhop.
 
-    Prefer aubellhop when available. Fallback uses a physics-inspired deterministic
-    image multipath model so unit tests and offline CI remain reproducible.
+    Deterministic image-multipath is ONLY for unit tests when allow_fallback=True.
+    Paper / experiment runs MUST set allow_fallback=False so silent fallback is impossible.
     """
 
-    def __init__(self, env: AcousticEnvironment | None = None, prefer_aubellhop: bool = True):
+    def __init__(
+        self,
+        env: AcousticEnvironment | None = None,
+        prefer_aubellhop: bool = True,
+        allow_fallback: bool = False,
+    ):
         self.env = env or AcousticEnvironment()
         self.prefer_aubellhop = prefer_aubellhop
+        self.allow_fallback = allow_fallback
         self._aubellhop = None
+        self._last_backend = "uninitialized"
         if prefer_aubellhop:
             try:
                 import aubellhop as bh  # type: ignore
@@ -171,6 +178,11 @@ class BellhopEngine:
                 self._aubellhop = bh
             except ImportError:
                 self._aubellhop = None
+                if not allow_fallback:
+                    raise RuntimeError(
+                        "aubellhop is required for paper runs (allow_fallback=False). "
+                        "Install aubellhop or explicitly enable allow_fallback for unit tests only."
+                    )
 
     @property
     def backend(self) -> str:
@@ -191,25 +203,19 @@ class BellhopEngine:
 
         if self._aubellhop is not None:
             arrivals = self._compute_aubellhop(range_m, tx_depth, rx_depth, seed)
+            used_backend = "aubellhop"
         else:
+            if not self.allow_fallback:
+                raise RuntimeError("Bellhop/aubellhop unavailable and allow_fallback=False")
             arrivals = self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
+            used_backend = "deterministic_image"
 
         arrivals = sorted(arrivals, key=lambda a: a.delay_s)
         if not arrivals:
-            # Guarantee at least a direct path for numerical stability
-            c = self.env.ssp.mean_speed()
-            path_len = math.hypot(range_m, abs(rx_depth - tx_depth))
-            delay = path_len / c
-            loss_db = 20.0 * math.log10(max(path_len, 1.0)) + _thorp_absorption_db_per_km(
-                self.env.carrier_frequency_hz
-            ) * (path_len / 1000.0)
-            arrivals = [
-                ArrivalPath(
-                    delay_s=delay,
-                    amplitude_complex=10 ** (-loss_db / 20.0),
-                    propagation_loss_db=loss_db,
-                )
-            ]
+            raise RuntimeError(
+                f"No acoustic arrivals for {tx_id}->{rx_id} at range={range_m:.1f}m "
+                f"(backend={used_backend})"
+            )
 
         delays = [a.delay_s for a in arrivals]
         coeffs = [a.amplitude_complex for a in arrivals]
@@ -218,11 +224,11 @@ class BellhopEngine:
         mean_delay = float(np.sum(powers * np.array(delays)))
         delay_spread = float(np.sqrt(max(np.sum(powers * (np.array(delays) - mean_delay) ** 2), 0.0)))
         prop_delay = float(min(delays))
-        # Effective loss from strongest path
         strongest = max(arrivals, key=lambda a: abs(a.amplitude_complex))
         prop_loss = float(strongest.propagation_loss_db)
 
         cir_t, cir_h = self._build_cir(delays, coeffs)
+        self._last_backend = used_backend
 
         return ChannelRealization(
             tx_id=tx_id,
@@ -243,6 +249,7 @@ class BellhopEngine:
             delay_spread_s=delay_spread,
             cir_time_s=cir_t,
             cir_complex=cir_h,
+            backend=used_backend,
         )
 
     def _compute_deterministic(
@@ -290,7 +297,6 @@ class BellhopEngine:
         assert self._aubellhop is not None
         bh = self._aubellhop
 
-        # Build environment dict compatible with aubellhop Environment API
         ssp = np.column_stack(
             [np.asarray(self.env.ssp.depths_m), np.asarray(self.env.ssp.speeds_mps)]
         )
@@ -307,62 +313,88 @@ class BellhopEngine:
             "receiver_range": max(range_m, 1.0),
         }
 
-        with tempfile.TemporaryDirectory(prefix="cgea_bellhop_") as tmp:
-            try:
-                env = bh.Environment(**env_kwargs)
-                # Prefer arrivals task
-                if hasattr(bh, "compute_arrivals"):
-                    arr = bh.compute_arrivals(env, workspace=tmp)
-                elif hasattr(bh, "compute"):
+        try:
+            env = bh.Environment(**env_kwargs)
+            # aubellhop compute_arrivals does NOT accept workspace=
+            if hasattr(bh, "compute_arrivals"):
+                arr = bh.compute_arrivals(env)
+            elif hasattr(bh, "compute"):
+                if hasattr(env, "task"):
                     env.task = "arrivals"
-                    arr = bh.compute(env, workspace=tmp)
-                else:
-                    return self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
-            except Exception:
-                # Robust fallback if binary / env write fails
+                arr = bh.compute(env)
+            else:
+                raise RuntimeError("aubellhop has no compute_arrivals/compute")
+        except Exception as exc:
+            if self.allow_fallback:
                 return self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
+            raise RuntimeError(f"aubellhop compute_arrivals failed: {exc}") from exc
 
         return self._parse_aubellhop_arrivals(arr, range_m, tx_depth, rx_depth, seed)
 
     def _parse_aubellhop_arrivals(
         self, arr: Any, range_m: float, tx_depth: float, rx_depth: float, seed: int
     ) -> list[ArrivalPath]:
-        """Best-effort parse of aubellhop arrival structures across versions."""
+        """Parse aubellhop arrival DataFrame/structures into ArrivalPath list."""
         arrivals: list[ArrivalPath] = []
         try:
-            # Common patterns: dict with time/amp, pandas, or object with attributes
-            if isinstance(arr, dict):
+            if hasattr(arr, "columns"):  # pandas DataFrame (aubellhop default)
+                times = np.asarray(arr["time_of_arrival"]).ravel()
+                amps = np.asarray(arr["arrival_amplitude"]).ravel()
+                surf = (
+                    np.asarray(arr["surface_bounces"]).ravel()
+                    if "surface_bounces" in arr.columns
+                    else np.zeros(len(times))
+                )
+                bott = (
+                    np.asarray(arr["bottom_bounces"]).ravel()
+                    if "bottom_bounces" in arr.columns
+                    else np.zeros(len(times))
+                )
+                adep = (
+                    np.asarray(arr["angle_of_departure"]).ravel()
+                    if "angle_of_departure" in arr.columns
+                    else np.zeros(len(times))
+                )
+                aarr = (
+                    np.asarray(arr["angle_of_arrival"]).ravel()
+                    if "angle_of_arrival" in arr.columns
+                    else np.zeros(len(times))
+                )
+            elif isinstance(arr, dict):
                 times = np.asarray(arr.get("time_of_arrival", arr.get("delay", []))).ravel()
-                amps = np.asarray(arr.get("amplitude", arr.get("arrival_amplitude", []))).ravel()
-            elif hasattr(arr, "time_of_arrival"):
-                times = np.asarray(arr.time_of_arrival).ravel()
-                amps = np.asarray(getattr(arr, "amplitude", getattr(arr, "arrival_amplitude"))).ravel()
-            elif hasattr(arr, "columns"):  # DataFrame-like
-                cols = list(arr.columns)
-                tcol = next(c for c in cols if "time" in str(c).lower() or "delay" in str(c).lower())
-                acol = next(c for c in cols if "amp" in str(c).lower())
-                times = np.asarray(arr[tcol]).ravel()
-                amps = np.asarray(arr[acol]).ravel()
+                amps = np.asarray(arr.get("arrival_amplitude", arr.get("amplitude", []))).ravel()
+                surf = np.zeros(len(times))
+                bott = np.zeros(len(times))
+                adep = np.zeros(len(times))
+                aarr = np.zeros(len(times))
             else:
-                return self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
+                raise TypeError(f"Unsupported aubellhop arrival type: {type(arr)}")
 
-            for t, a in zip(times, amps):
-                amp = complex(a) if np.iscomplexobj(a) or isinstance(a, complex) else complex(float(a), 0.0)
-                if abs(amp) == 0 or not np.isfinite(t):
+            for t, a, ns, nb, ld, la in zip(times, amps, surf, bott, adep, aarr):
+                amp = complex(a)
+                if abs(amp) == 0 or not np.isfinite(float(t)):
                     continue
                 loss_db = -20.0 * math.log10(max(abs(amp), 1e-30))
                 arrivals.append(
                     ArrivalPath(
                         delay_s=float(t),
                         amplitude_complex=amp,
+                        launch_angle_deg=float(ld),
+                        arrival_angle_deg=float(la),
+                        num_surface_bounces=int(ns),
+                        num_bottom_bounces=int(nb),
                         propagation_loss_db=loss_db,
                     )
                 )
-        except Exception:
-            return self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
+        except Exception as exc:
+            if self.allow_fallback:
+                return self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
+            raise RuntimeError(f"Failed to parse aubellhop arrivals: {exc}") from exc
 
         if not arrivals:
-            return self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
+            if self.allow_fallback:
+                return self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
+            raise RuntimeError("aubellhop returned zero usable arrivals")
         return arrivals
 
     @staticmethod

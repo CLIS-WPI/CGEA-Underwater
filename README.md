@@ -9,13 +9,17 @@ The research architecture is **frozen**. This repository implements
 reproducible validation over Bellhop-generated underwater acoustic channels,
 Sionna PHY bridging, SimPy networking, and B1–B5 governance baselines.
 
-## Environment note
+## Environment / reproducibility note
 
-Phase-0 listed Python 3.11. Current `aubellhop` wheels require Python ≥3.12,
+Phase-0 listed Python 3.11. Current `aubellhop` wheels require **Python ≥3.12**,
 so the Docker image uses **Ubuntu 22.04 + Python 3.12** with PyTorch CUDA and
-Sionna 2.1.x. Sionna RT must **not** be used as the underwater propagation
-model; Bellhop/AUBellhop generates acoustic paths. A deterministic image-multipath
-fallback keeps tests reproducible when Bellhop is unavailable.
+Sionna 2.1.x. This deviation is intentional and required for Bellhop via aubellhop.
+
+**Paper runs must set** `acoustic.allow_fallback: false` and `acoustic.use_sionna_bridge: true`
+(defaults in `configs/acoustic/default.yaml`). Image-multipath fallback is for unit tests only.
+
+Sionna RT must **not** be used as the underwater propagation model; Bellhop/AUBellhop
+generates acoustic paths. Validation plots: `scripts/validate_acoustic_sanity.py`.
 
 ## Quick start (all tests inside Docker)
 

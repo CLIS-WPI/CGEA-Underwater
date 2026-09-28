@@ -1,0 +1,7 @@
+{
+  "trace_id": "tr_c6cda2f2e157",
+  "environment_id": "default_ssp_200m",
+  "seed": 0,
+  "carrier_frequency_hz": 25000.0,
+  "num_samples": 40
+}

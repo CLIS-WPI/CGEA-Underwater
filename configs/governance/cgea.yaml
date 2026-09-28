@@ -1,3 +1,4 @@
+# FROZEN governance thresholds — shared across E1–E5 (do not tune per experiment).
 soft_expiry_s: 300.0
 hard_expiry_s: 900.0
 authority_refresh_s: 60.0

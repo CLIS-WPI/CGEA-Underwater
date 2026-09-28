@@ -27,6 +27,8 @@ def _test_cfg(tmp_path: Path):
                 "noise_psd_dbm_hz": -80.0,
                 "tx_power_dbm": 180.0,
                 "prefer_aubellhop": False,
+                "allow_fallback": True,
+                "use_sionna_bridge": False,
                 "ssp": {"depths_m": [0.0, 200.0], "speeds_mps": [1500.0, 1500.0]},
             },
             "mission": {
