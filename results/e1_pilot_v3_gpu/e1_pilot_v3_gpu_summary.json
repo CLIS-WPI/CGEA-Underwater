@@ -1,0 +1,7 @@
+{
+  "n": 378,
+  "median_gco_outage0": 0.7661971830985915,
+  "paired_delta_utility_mean": 52.265735185185186,
+  "paired_delta_utility_without_conflict_mean": 38.93240185185186,
+  "freshness_gate": true
+}

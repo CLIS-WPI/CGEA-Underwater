@@ -21,7 +21,8 @@ from cgea.metrics import RunMetrics
 
 DEFAULT_WORKERS = 16  # initial fallback only; production default is set after 1/4/8/16/24 bench
 BENCH_WORKER_COUNTS = (1, 4, 8, 16, 24)
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+# parallel.py lives at src/cgea/experiments/; repo root is parents[3].
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def logical_cpu_count() -> int:

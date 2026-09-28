@@ -1,0 +1,23 @@
+# Predeclared before any E1-v3 B4 inspection. Do not retune after B4 outcomes.
+# Schedule is a planning aid relative to outage_start_s=200.
+# Campaign GATE uses measured freshness (last_auth, capsule hard expiry) at proposal time.
+
+outage_start_s: 200.0
+sim_tick_s: 20.0
+# Disconnected cohort = far half of the default mid-fleet partition (auv_06..).
+cohort: disconnected_far_half
+
+# Absolute mission times at which disconnected-cohort AUVs emit a consequential proposal.
+# Intended bands if last_auth is shortly before outage_start (refresh 60 s):
+#   220  ~ FRESH
+#   400  ~ AGING  (age ≳ 180)
+#   640  ~ STALE  (age ≳ 400)
+#   1140 ~ HARD_EXPIRED (age ≳ 900); requires outage covering this instant
+proposal_times_s: [220.0, 400.0, 640.0, 1140.0]
+
+# Rotate class so the four ticks are not the same action.
+action_cycle:
+  - reassign_another_auv
+  - enter_exclusion_zone
+  - abandon_mandatory_inspection
+  - exceed_return_energy_reserve

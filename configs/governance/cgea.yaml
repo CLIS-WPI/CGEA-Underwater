@@ -6,6 +6,14 @@ authority_capsule_bytes: 256
 freshness_mode: continuous  # continuous | binary | disabled
 immediate_resume: false
 
+# Packetized reconciliation (not a freshness-threshold retune).
+reconciliation:
+  digest_max_retries: 3
+  digest_retry_s: 20.0
+  digest_bytes: 128
+  provenance_bytes: 256
+  reconcile_bytes: 128
+
 freshness:
   aging_age_s: 180.0
   stale_age_s: 400.0

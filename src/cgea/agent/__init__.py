@@ -36,6 +36,10 @@ class MissionPlanner:
     def __init__(self, consequential_period_s: float = 120.0, seed: int = 0):
         self.consequential_period_s = consequential_period_s
         self.seed = seed
+        self.challenge_times_s: list[float] = []
+        self.challenge_cohort: set[str] = set()
+        self.challenge_cycle: list[str] = []
+        self.sim_tick_s: float = 20.0
 
     def propose(self, world: MissionWorld, auv_id: str) -> ActionProposal:
         auv = world.auvs[auv_id]
@@ -61,6 +65,10 @@ class MissionPlanner:
                 )
 
         gw_reachable = bool(auv.local_observations.get("_gw_reachable", True))
+
+        challenge = self._freshness_challenge(world, auv, auv_id, gw_reachable)
+        if challenge is not None:
+            return challenge
 
         # 2. Isolated vehicle with abort flag: high-level objective change.
         if (
@@ -166,6 +174,75 @@ class MissionPlanner:
             confidence=0.9,
             mission_state_version=auv.state_version,
             rationale="maintain_formation",
+        )
+
+    def _freshness_challenge(self, world, auv, auv_id: str, gw_reachable: bool):
+        """Predeclared disconnected-cohort consequential ticks. Schedule is frozen."""
+        if not self.challenge_times_s or auv_id not in self.challenge_cohort:
+            return None
+        if gw_reachable or auv.failed:
+            return None
+        tick = float(self.sim_tick_s)
+        t = float(world.time_s)
+        for i, t0 in enumerate(self.challenge_times_s):
+            if t0 <= t < t0 + tick:
+                cycle = self.challenge_cycle or [
+                    ActionType.REASSIGN_ANOTHER_AUV.value,
+                    ActionType.ENTER_EXCLUSION_ZONE.value,
+                    ActionType.ABANDON_MANDATORY_INSPECTION.value,
+                    ActionType.EXCEED_RETURN_ENERGY_RESERVE.value,
+                ]
+                name = cycle[i % len(cycle)]
+                return self._challenge_proposal(auv, auv_id, name, world)
+        return None
+
+    def _challenge_proposal(self, auv, auv_id: str, name: str, world: MissionWorld) -> ActionProposal:
+        if name == ActionType.REASSIGN_ANOTHER_AUV.value and world.failed_auv_ids:
+            fid = world.failed_auv_ids[0]
+            seg_id = world.auvs[fid].assigned_segment
+            return ActionProposal(
+                proposer_id=auv_id,
+                action_type=ActionType.REASSIGN_ANOTHER_AUV,
+                parameters={"target_auv": fid, "segment_id": seg_id},
+                expected_energy_cost_j=500.0,
+                risk_class=RiskClass.CONSEQUENTIAL,
+                confidence=0.72,
+                mission_state_version=auv.state_version,
+                rationale="freshness_challenge_reassign",
+            )
+        if name == ActionType.ENTER_EXCLUSION_ZONE.value and world.exclusion_zones:
+            zone = world.exclusion_zones[0]
+            anom = next(iter(world.anomalies), "leak_A")
+            return ActionProposal(
+                proposer_id=auv_id,
+                action_type=ActionType.ENTER_EXCLUSION_ZONE,
+                parameters={"zone": zone, "anomaly_id": anom},
+                expected_energy_cost_j=200.0,
+                risk_class=RiskClass.CONSEQUENTIAL,
+                confidence=0.60,
+                mission_state_version=auv.state_version,
+                rationale="freshness_challenge_exclusion",
+            )
+        if name == ActionType.ABANDON_MANDATORY_INSPECTION.value:
+            return ActionProposal(
+                proposer_id=auv_id,
+                action_type=ActionType.ABANDON_MANDATORY_INSPECTION,
+                parameters={"segment_id": auv.assigned_segment},
+                expected_energy_cost_j=10.0,
+                risk_class=RiskClass.CONSEQUENTIAL,
+                confidence=0.57,
+                mission_state_version=auv.state_version,
+                rationale="freshness_challenge_abandon",
+            )
+        return ActionProposal(
+            proposer_id=auv_id,
+            action_type=ActionType.EXCEED_RETURN_ENERGY_RESERVE,
+            parameters={"requested_j": 200.0, "segment_id": auv.assigned_segment},
+            expected_energy_cost_j=200.0,
+            risk_class=RiskClass.CONSEQUENTIAL,
+            confidence=0.62,
+            mission_state_version=auv.state_version,
+            rationale="freshness_challenge_reserve",
         )
 
     def _hold(self, auv: AUVState, rationale: str) -> ActionProposal:

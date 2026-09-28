@@ -71,9 +71,10 @@ def test_recovering_blocks_consequential_b4():
         energy=auv.energy,
         supervisor_reachable=True,
         immediate_resume=False,
+        violates_frozen_risk=False,
     )
-    assert result.decision == GovernorDecision.DENY
-    assert result.reason_code == ReasonCode.DENY_RECOVERING_CONSEQUENTIAL
+    assert result.decision == GovernorDecision.DEFER
+    assert result.reason_code == ReasonCode.DEFER_RECOVERING_PENDING_REAUTH
 
 
 def test_low_risk_allowed_during_recovering():

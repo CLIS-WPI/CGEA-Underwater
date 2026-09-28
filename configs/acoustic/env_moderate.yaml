@@ -1,0 +1,27 @@
+# Predeclared deterministic scenario variation (not a random seed).
+# Seed remains Monte Carlo / PHY noise / Bernoulli loss.
+environment_id: paper_ssp_200m_moderate_v1
+water_depth_m: 200.0
+carrier_frequency_hz: 25000.0
+bandwidth_hz: 5000.0
+noise_psd_dbm_hz: -47.0
+tx_power_dbm: 60.0
+snr_threshold_db: 12.0
+prefer_aubellhop: true
+allow_fallback: false
+use_sionna_bridge: true
+use_gpu_phy: true
+doppler_mode: not_modeled
+
+ssp:
+  depths_m: [0.0, 40.0, 90.0, 200.0]
+  speeds_mps: [1518.0, 1506.0, 1508.0, 1518.0]
+
+bottom:
+  soundspeed_mps: 1620.0
+  density_ratio: 1.55
+  attenuation_db_per_wavelength: 0.6
+
+surface:
+  boundary: vacuum
+  roughness_m: 0.05

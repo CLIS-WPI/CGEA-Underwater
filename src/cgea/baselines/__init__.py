@@ -68,6 +68,7 @@ class BaselineController:
         position: dict[str, float] | None = None,
         freshness_mode: str = "continuous",
         immediate_resume: bool = False,
+        violates_frozen_risk: bool = False,
     ) -> GovernorResult:
         raise NotImplementedError
 
@@ -78,7 +79,8 @@ class B1Centralized(BaselineController):
     baseline_id = BaselineId.B1_CENTRALIZED
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
-               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False):
+               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
+               violates_frozen_risk=False):
         if proposal.risk_class == RiskClass.LOW:
             return self.governor.decide(
                 proposal, connectivity, capsule, last_authority_update, now, energy, position, freshness_mode
@@ -117,7 +119,8 @@ class B2Unrestricted(BaselineController):
     baseline_id = BaselineId.B2_UNRESTRICTED
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
-               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False):
+               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
+               violates_frozen_risk=False):
         return self.governor._log(
             GovernorDecision.ALLOW,
             ReasonCode.ALLOW_AUTHORIZED,
@@ -140,7 +143,8 @@ class B3StaticBounded(BaselineController):
         self.static_allowed = static_allowed or {a.value for a in LOW_RISK_ACTIONS}
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
-               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False):
+               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
+               violates_frozen_risk=False):
         if proposal.action_type.value in self.static_allowed:
             return self.governor._log(
                 GovernorDecision.ALLOW,
@@ -166,7 +170,8 @@ class B4CGEA(BaselineController):
     baseline_id = BaselineId.B4_CGEA
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
-               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False):
+               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
+               violates_frozen_risk=False):
         if immediate_resume and connectivity == ConnectivityState.RECOVERING:
             connectivity = ConnectivityState.CONNECTED
         return self.governor.decide(
@@ -178,6 +183,7 @@ class B4CGEA(BaselineController):
             energy,
             position,
             freshness_mode,
+            violates_frozen_risk=violates_frozen_risk,
         )
 
 
@@ -198,7 +204,8 @@ class B5AdaptiveAutonomy(BaselineController):
             self.baseline_id = BaselineId.B5_NOMINAL
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
-               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False):
+               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
+               violates_frozen_risk=False):
         if proposal.risk_class == RiskClass.LOW:
             return self.governor._log(
                 GovernorDecision.ALLOW,

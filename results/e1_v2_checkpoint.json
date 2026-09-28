@@ -1,0 +1,6 @@
+{
+  "campaign": "e1_pilot_v2_gpu",
+  "git_commit": "b0d804b",
+  "role": "E1-v2 diagnostic checkpoint. Do not retune CGEA thresholds, B5 variants, or utility weights. Do not overwrite these artifacts.",
+  "utility_freeze_id": "utility_v2_frozen_2026-09-28"
+}

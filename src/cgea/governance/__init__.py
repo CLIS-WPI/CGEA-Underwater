@@ -9,6 +9,7 @@ from typing import Any
 from pydantic import Field
 
 from cgea.agent import ActionProposal
+from cgea.governance.semantic_conflicts import detect_semantic_conflicts
 from cgea.mission import (
     CONSEQUENTIAL_ACTIONS,
     LOW_RISK_ACTIONS,
@@ -44,6 +45,8 @@ class ReasonCode(str, enum.Enum):
     DENY_STALE_AUTHORITY = "DENY_STALE_AUTHORITY"
     DENY_HARD_EXPIRY = "DENY_HARD_EXPIRY"
     DENY_RECOVERING_CONSEQUENTIAL = "DENY_RECOVERING_CONSEQUENTIAL"
+    DENY_RECOVERING_HARD_SAFETY = "DENY_RECOVERING_HARD_SAFETY"
+    DEFER_RECOVERING_PENDING_REAUTH = "DEFER_RECOVERING_PENDING_REAUTH"
     DENY_SUPERVISOR_UNREACHABLE = "DENY_SUPERVISOR_UNREACHABLE"
     DENY_STATIC_BOUND = "DENY_STATIC_BOUND"
     DENY_CONNECTIVITY_POLICY = "DENY_CONNECTIVITY_POLICY"
@@ -259,6 +262,7 @@ class ExecutionGovernor:
         energy: EnergyState,
         position: dict[str, float] | None = None,
         freshness_mode: str = "continuous",  # continuous | binary | disabled
+        violates_frozen_risk: bool = False,
     ) -> GovernorResult:
         age = authority_age(now, last_authority_update)
 
@@ -285,11 +289,20 @@ class ExecutionGovernor:
 
         action = proposal.action_type.value
 
-        # RECOVERING blocks consequential
+        # RECOVERING: DENY hard-safety; DEFER useful pending reauthorization
         if connectivity == ConnectivityState.RECOVERING and proposal.risk_class == RiskClass.CONSEQUENTIAL:
+            if violates_frozen_risk:
+                return self._log(
+                    GovernorDecision.DENY,
+                    ReasonCode.DENY_RECOVERING_HARD_SAFETY,
+                    proposal,
+                    connectivity,
+                    freshness,
+                    eff.capsule_id,
+                )
             return self._log(
-                GovernorDecision.DENY,
-                ReasonCode.DENY_RECOVERING_CONSEQUENTIAL,
+                GovernorDecision.DEFER,
+                ReasonCode.DEFER_RECOVERING_PENDING_REAUTH,
                 proposal,
                 connectivity,
                 freshness,
@@ -419,6 +432,7 @@ class NodeJournalEntry(CgeaBaseModel):
     node_id: str
     actions_proposed: list[str] = Field(default_factory=list)
     actions_executed: list[str] = Field(default_factory=list)
+    executed_params: list[dict[str, Any]] = Field(default_factory=list)
     capsule_id: str | None = None
     energy_battery_j: float = 0.0
     task_ownership: dict[str, str] = Field(default_factory=dict)
@@ -454,6 +468,8 @@ class ReconciliationResult(CgeaBaseModel):
     latency_s: float
     new_capsule_ids: list[str] = Field(default_factory=list)
     immediate_resume: bool = False
+    by_kind: dict[str, int] = Field(default_factory=dict)
+    events: list[dict[str, Any]] = Field(default_factory=list)
 
 
 def reconcile_partitions(
@@ -461,8 +477,10 @@ def reconcile_partitions(
     journals: dict[str, list[NodeJournalEntry]],
     now: float,
     immediate_resume: bool = False,
+    failed_ids: list[str] | None = None,
+    duplicate_work_count: int = 0,
 ) -> ReconciliationResult:
-    """Digest exchange → divergence → provenance → validate → reauthorize."""
+    """Semantic validation. Capsule presence is not a conflict."""
     if immediate_resume:
         return ReconciliationResult(
             conflicts=0,
@@ -472,30 +490,24 @@ def reconcile_partitions(
             immediate_resume=True,
         )
 
-    # Detect divergence via ownership/energy hashes
-    ownership_hashes = {d.ownership_hash for d in digests}
-    conflicts = 0
-    if len(ownership_hashes) > 1:
-        conflicts += len(ownership_hashes) - 1
-
+    sem = detect_semantic_conflicts(
+        journals,
+        failed_ids=failed_ids,
+        duplicate_work_count=duplicate_work_count,
+    )
     validated = 0
     rejected = 0
-    for nid, entries in journals.items():
+    for _nid, entries in journals.items():
         for e in entries:
-            for act in e.actions_executed:
-                # Consequential without capsule → reject
-                if act in {a.value for a in CONSEQUENTIAL_ACTIONS} and not e.capsule_id:
-                    rejected += 1
-                    conflicts += 1
-                else:
-                    validated += 1
-
-    # Simulated reconciliation latency proportional to provenance volume
-    latency = 5.0 + 0.01 * sum(d.action_count for d in digests) + 2.0 * conflicts
+            for _act in e.actions_executed:
+                validated += 1
+    rejected = int(sem["semantic_conflicts_per_mission"])
     return ReconciliationResult(
-        conflicts=conflicts,
+        conflicts=int(sem["semantic_conflicts_per_mission"]),
         validated_actions=validated,
         rejected_actions=rejected,
-        latency_s=latency,
+        latency_s=0.0,
         immediate_resume=False,
+        by_kind=dict(sem["by_kind"]),
+        events=list(sem["events"]),
     )
