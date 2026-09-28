@@ -1,0 +1,17 @@
+name: e1_pilot
+baselines:
+  - B1
+  - B2
+  - B3
+  - B4
+  - B5_conservative
+  - B5_nominal
+  - B5_permissive
+seeds: [0, 1, 2]
+description: >
+  E1 pilot only (n=3 seeds). Frozen configs. No post-hoc CGEA tuning.
+  Outage durations swept externally: 0 / medium(300s) / long(500s).
+  Identical channel traces per seed across all baselines and outage conditions.
+
+# B5 variants were fixed a priori (see src/cgea/baselines/__init__.py):
+#   conservative | nominal | permissive

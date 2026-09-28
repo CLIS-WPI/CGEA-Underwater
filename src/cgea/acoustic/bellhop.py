@@ -308,9 +308,10 @@ class BellhopEngine:
             "bottom_density": self.env.bottom.density_ratio,
             "bottom_soundspeed": self.env.bottom.soundspeed_mps,
             "bottom_attenuation": self.env.bottom.attenuation_db_per_wavelength,
-            "source_depth": tx_depth,
-            "receiver_depth": rx_depth,
-            "receiver_range": max(range_m, 1.0),
+            # Clamp away from exact surface/bottom for Bellhop numerical stability
+            "source_depth": float(np.clip(tx_depth, 1.0, max(self.env.water_depth_m - 1.0, 1.0))),
+            "receiver_depth": float(np.clip(rx_depth, 1.0, max(self.env.water_depth_m - 1.0, 1.0))),
+            "receiver_range": max(float(range_m), 1.0),
         }
 
         try:
@@ -395,6 +396,10 @@ class BellhopEngine:
             if self.allow_fallback:
                 return self._compute_deterministic(range_m, tx_depth, rx_depth, seed)
             raise RuntimeError("aubellhop returned zero usable arrivals")
+        # Keep strongest paths for Sionna tractability (acoustic interface, not governance)
+        max_paths = 32
+        if len(arrivals) > max_paths:
+            arrivals = sorted(arrivals, key=lambda a: abs(a.amplitude_complex), reverse=True)[:max_paths]
         return arrivals
 
     @staticmethod

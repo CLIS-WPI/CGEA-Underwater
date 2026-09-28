@@ -1,0 +1,1115 @@
+{
+  "B1|0": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.975519999999998,
+      "std": 2.175583928816829e-15,
+      "ci95_low": 11.975519999999994,
+      "ci95_high": 11.975520000000001,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.032258064516129,
+      "std": 0.0,
+      "ci95_low": 1.032258064516129,
+      "ci95_high": 1.032258064516129,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B1|long": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97636,
+      "std": 0.0,
+      "ci95_low": 11.97636,
+      "ci95_high": 11.97636,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.625,
+      "std": 0.0,
+      "ci95_low": 0.625,
+      "ci95_high": 0.625,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.125,
+      "std": 0.0,
+      "ci95_low": 1.125,
+      "ci95_high": 1.125,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 5.0,
+      "std": 0.0,
+      "ci95_low": 5.0,
+      "ci95_high": 5.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B1|medium": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97672,
+      "std": 0.0,
+      "ci95_low": 11.97672,
+      "ci95_high": 11.97672,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.5,
+      "std": 0.0,
+      "ci95_low": 0.5,
+      "ci95_high": 0.5,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.2391304347826086,
+      "std": 0.0,
+      "ci95_low": 1.2391304347826086,
+      "ci95_high": 1.2391304347826086,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 3.0,
+      "std": 0.0,
+      "ci95_low": 3.0,
+      "ci95_high": 3.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B2|0": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.975519999999998,
+      "std": 2.175583928816829e-15,
+      "ci95_low": 11.975519999999994,
+      "ci95_high": 11.975520000000001,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.032258064516129,
+      "std": 0.0,
+      "ci95_low": 1.032258064516129,
+      "ci95_high": 1.032258064516129,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B2|long": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97636,
+      "std": 0.0,
+      "ci95_low": 11.97636,
+      "ci95_high": 11.97636,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.625,
+      "std": 0.0,
+      "ci95_low": 0.625,
+      "ci95_high": 0.625,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.125,
+      "std": 0.0,
+      "ci95_low": 1.125,
+      "ci95_high": 1.125,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 5.0,
+      "std": 0.0,
+      "ci95_low": 5.0,
+      "ci95_high": 5.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B2|medium": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97672,
+      "std": 0.0,
+      "ci95_low": 11.97672,
+      "ci95_high": 11.97672,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.5,
+      "std": 0.0,
+      "ci95_low": 0.5,
+      "ci95_high": 0.5,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.2391304347826086,
+      "std": 0.0,
+      "ci95_low": 1.2391304347826086,
+      "ci95_high": 1.2391304347826086,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 3.0,
+      "std": 0.0,
+      "ci95_low": 3.0,
+      "ci95_high": 3.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B3|0": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97752,
+      "std": 0.0,
+      "ci95_low": 11.97752,
+      "ci95_high": 11.97752,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.032258064516129,
+      "std": 0.0,
+      "ci95_low": 1.032258064516129,
+      "ci95_high": 1.032258064516129,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B3|long": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97772,
+      "std": 0.0,
+      "ci95_low": 11.97772,
+      "ci95_high": 11.97772,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.125,
+      "std": 0.0,
+      "ci95_low": 1.125,
+      "ci95_high": 1.125,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B3|medium": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.977759999999998,
+      "std": 2.175583928816829e-15,
+      "ci95_low": 11.977759999999995,
+      "ci95_high": 11.977760000000002,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.2391304347826086,
+      "std": 0.0,
+      "ci95_low": 1.2391304347826086,
+      "ci95_high": 1.2391304347826086,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B4|0": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.975519999999998,
+      "std": 2.175583928816829e-15,
+      "ci95_low": 11.975519999999994,
+      "ci95_high": 11.975520000000001,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.032258064516129,
+      "std": 0.0,
+      "ci95_low": 1.032258064516129,
+      "ci95_high": 1.032258064516129,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B4|long": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97612,
+      "std": 0.0,
+      "ci95_low": 11.97612,
+      "ci95_high": 11.97612,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.625,
+      "std": 0.0,
+      "ci95_low": 0.625,
+      "ci95_high": 0.625,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.125,
+      "std": 0.0,
+      "ci95_low": 1.125,
+      "ci95_high": 1.125,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 5.0,
+      "std": 0.0,
+      "ci95_low": 5.0,
+      "ci95_high": 5.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B4|medium": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97576,
+      "std": 0.0,
+      "ci95_low": 11.97576,
+      "ci95_high": 11.97576,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.3,
+      "std": 0.0,
+      "ci95_low": 0.3,
+      "ci95_high": 0.3,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.2391304347826086,
+      "std": 0.0,
+      "ci95_low": 1.2391304347826086,
+      "ci95_high": 1.2391304347826086,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 3.0,
+      "std": 0.0,
+      "ci95_low": 3.0,
+      "ci95_high": 3.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_conservative|0": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97712,
+      "std": 0.0,
+      "ci95_low": 11.97712,
+      "ci95_high": 11.97712,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.032258064516129,
+      "std": 0.0,
+      "ci95_low": 1.032258064516129,
+      "ci95_high": 1.032258064516129,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_conservative|long": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97752,
+      "std": 0.0,
+      "ci95_low": 11.97752,
+      "ci95_high": 11.97752,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.125,
+      "std": 0.0,
+      "ci95_low": 1.125,
+      "ci95_high": 1.125,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_conservative|medium": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.977560000000002,
+      "std": 2.175583928816829e-15,
+      "ci95_low": 11.977559999999999,
+      "ci95_high": 11.977560000000006,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.2391304347826086,
+      "std": 0.0,
+      "ci95_low": 1.2391304347826086,
+      "ci95_high": 1.2391304347826086,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_nominal|0": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.975519999999998,
+      "std": 2.175583928816829e-15,
+      "ci95_low": 11.975519999999994,
+      "ci95_high": 11.975520000000001,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.032258064516129,
+      "std": 0.0,
+      "ci95_low": 1.032258064516129,
+      "ci95_high": 1.032258064516129,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_nominal|long": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97636,
+      "std": 0.0,
+      "ci95_low": 11.97636,
+      "ci95_high": 11.97636,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.625,
+      "std": 0.0,
+      "ci95_low": 0.625,
+      "ci95_high": 0.625,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.125,
+      "std": 0.0,
+      "ci95_low": 1.125,
+      "ci95_high": 1.125,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 5.0,
+      "std": 0.0,
+      "ci95_low": 5.0,
+      "ci95_high": 5.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_nominal|medium": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97672,
+      "std": 0.0,
+      "ci95_low": 11.97672,
+      "ci95_high": 11.97672,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.5,
+      "std": 0.0,
+      "ci95_low": 0.5,
+      "ci95_high": 0.5,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.2391304347826086,
+      "std": 0.0,
+      "ci95_low": 1.2391304347826086,
+      "ci95_high": 1.2391304347826086,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 3.0,
+      "std": 0.0,
+      "ci95_low": 3.0,
+      "ci95_high": 3.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_permissive|0": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.975519999999998,
+      "std": 2.175583928816829e-15,
+      "ci95_low": 11.975519999999994,
+      "ci95_high": 11.975520000000001,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.032258064516129,
+      "std": 0.0,
+      "ci95_low": 1.032258064516129,
+      "ci95_high": 1.032258064516129,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_permissive|long": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97636,
+      "std": 0.0,
+      "ci95_low": 11.97636,
+      "ci95_high": 11.97636,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.625,
+      "std": 0.0,
+      "ci95_low": 0.625,
+      "ci95_high": 0.625,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.125,
+      "std": 0.0,
+      "ci95_low": 1.125,
+      "ci95_high": 1.125,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 5.0,
+      "std": 0.0,
+      "ci95_low": 5.0,
+      "ci95_high": 5.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  },
+  "B5_permissive|medium": {
+    "mission_completion_ratio": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "mission_utility": {
+      "mean": 11.97672,
+      "std": 0.0,
+      "ci95_low": 11.97672,
+      "ci95_high": 11.97672,
+      "n": 3.0
+    },
+    "high_risk_action_rate": {
+      "mean": 0.5,
+      "std": 0.0,
+      "ci95_low": 0.5,
+      "ci95_high": 0.5,
+      "n": 3.0
+    },
+    "false_denial_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "n": 3.0
+    },
+    "useful_action_retention": {
+      "mean": 1.0,
+      "std": 0.0,
+      "ci95_low": 1.0,
+      "ci95_high": 1.0,
+      "n": 3.0
+    },
+    "gco": {
+      "mean": 1.2391304347826086,
+      "std": 0.0,
+      "ci95_low": 1.2391304347826086,
+      "ci95_high": 1.2391304347826086,
+      "n": 3.0
+    },
+    "high_risk_action_count": {
+      "mean": 3.0,
+      "std": 0.0,
+      "ci95_low": 3.0,
+      "ci95_high": 3.0,
+      "n": 3.0
+    },
+    "n": 3,
+    "note": "pilot n=3; CI is indicative only"
+  }
+}

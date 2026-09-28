@@ -109,7 +109,7 @@ class ChannelTraceStore:
     def meta_path(self, trace_id: str) -> Path:
         return self.root / f"{trace_id}.meta.json"
 
-    def save(self, trace: ChannelTrace) -> Path:
+    def save(self, trace: ChannelTrace, extra_meta: dict[str, Any] | None = None) -> Path:
         import pyarrow as pa
         import pyarrow.parquet as pq
 
@@ -148,8 +148,13 @@ class ChannelTraceStore:
             "carrier_frequency_hz": trace.carrier_frequency_hz,
             "num_samples": len(trace.samples),
         }
+        if extra_meta:
+            meta.update(extra_meta)
         self.meta_path(trace.trace_id).write_text(json.dumps(meta, indent=2))
         return out
+
+    def load_meta(self, trace_id: str) -> dict[str, Any]:
+        return json.loads(self.meta_path(trace_id).read_text())
 
     def load(self, trace_id: str) -> ChannelTrace:
         import pyarrow.parquet as pq
@@ -268,6 +273,8 @@ def generate_mission_trace(
     node_ids = list(node_positions.keys())
     # Positions are frozen for paper runs: compute each directed link once, replay over time.
     link_cache: dict[tuple[str, str], tuple] = {}
+    total_links = len(node_ids) * (len(node_ids) - 1)
+    done = 0
     for i, tx in enumerate(node_ids):
         for j, rx in enumerate(node_ids):
             if i == j:
@@ -293,6 +300,13 @@ def generate_mission_trace(
                     snr_threshold_db=snr_threshold_db,
                 )
             link_cache[(tx, rx)] = (realization, q)
+            done += 1
+            if done == 1 or done % 20 == 0 or done == total_links:
+                print(
+                    f"  [channel] {done}/{total_links} links backend={realization.backend} "
+                    f"n_paths={len(realization.arrivals)}",
+                    flush=True,
+                )
 
     for t in times:
         for (tx, rx), (realization, q) in link_cache.items():

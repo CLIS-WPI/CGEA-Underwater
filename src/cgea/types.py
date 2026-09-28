@@ -26,6 +26,13 @@ def _json_default(obj: Any) -> Any:
         return obj.model_dump()
     if isinstance(obj, Path):
         return str(obj)
+    try:
+        from omegaconf import OmegaConf
+
+        if OmegaConf.is_config(obj):
+            return OmegaConf.to_container(obj, resolve=True)
+    except Exception:  # noqa: BLE001
+        pass
     if hasattr(obj, "tolist"):
         return obj.tolist()
     raise TypeError(f"Object of type {type(obj)!r} is not JSON serializable")
@@ -33,22 +40,26 @@ def _json_default(obj: Any) -> Any:
 
 def config_hash(cfg: Any) -> str:
     """Deterministic hash of a Hydra/OmegaConf or mapping config."""
-    if hasattr(cfg, "model_dump") and not hasattr(cfg, "_metadata"):
-        payload = cfg.model_dump()
-    else:
-        try:
-            from omegaconf import OmegaConf
+    try:
+        from omegaconf import OmegaConf
 
-            if OmegaConf.is_config(cfg):
-                payload = OmegaConf.to_container(cfg, resolve=True)
-            else:
-                payload = cfg
-        except Exception:  # noqa: BLE001
+        if OmegaConf.is_config(cfg):
+            payload = OmegaConf.to_container(cfg, resolve=True)
+        elif hasattr(cfg, "model_dump"):
+            payload = cfg.model_dump()
+        else:
             payload = cfg
+    except Exception:  # noqa: BLE001
+        payload = cfg.model_dump() if hasattr(cfg, "model_dump") else cfg
     return hashlib.sha256(stable_json(payload).encode("utf-8")).hexdigest()[:16]
 
 
 def git_commit(repo_root: Path | None = None) -> str:
+    import os
+
+    env_c = os.environ.get("GIT_COMMIT") or os.environ.get("GIT_SHA")
+    if env_c:
+        return env_c.strip()
     root = repo_root or Path(__file__).resolve().parents[2]
     try:
         return (

@@ -1,28 +1,32 @@
-"""Five governance baselines B1–B5 over identical channel traces."""
+"""Five governance baselines B1–B5 over identical channel traces.
+
+B5 is NOT a single policy: three fixed variants are defined *a priori*
+(before examining CGEA results):
+
+  - B5_conservative: consequential only while CONNECTED + supervisor reachable
+  - B5_nominal: connectivity-aware adaptive (allow under partition)
+  - B5_permissive: allow consequential in essentially all connectivity states
+
+These are adaptive-autonomy policies without capsules / independent governor /
+provenance-gated reauthorization.
+"""
 
 from __future__ import annotations
 
 import enum
-from typing import Any
 
 from cgea.agent import ActionProposal, ExecutionAdapter, MissionPlanner
 from cgea.governance import (
     AuthorityCapsule,
-    AuthorityFreshness,
     ConnectivityClassifier,
-    ConnectivityMetrics,
     ConnectivityState,
     ExecutionGovernor,
     FreshnessPolicy,
     GovernorDecision,
     GovernorResult,
     ReasonCode,
-    contract_capsule,
-    issue_capsule,
-    classify_freshness,
-    authority_age,
 )
-from cgea.mission import CONSEQUENTIAL_ACTIONS, RiskClass, EnergyState
+from cgea.mission import RiskClass, EnergyState
 
 
 class BaselineId(str, enum.Enum):
@@ -30,7 +34,10 @@ class BaselineId(str, enum.Enum):
     B2_UNRESTRICTED = "B2"
     B3_STATIC_BOUNDED = "B3"
     B4_CGEA = "B4"
-    B5_ADAPTIVE = "B5"
+    B5_ADAPTIVE = "B5"  # alias → nominal
+    B5_CONSERVATIVE = "B5_conservative"
+    B5_NOMINAL = "B5_nominal"
+    B5_PERMISSIVE = "B5_permissive"
 
 
 class BaselineController:
@@ -111,7 +118,6 @@ class B2Unrestricted(BaselineController):
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
                supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False):
-        # Always allow — no governor gating
         return self.governor._log(
             GovernorDecision.ALLOW,
             ReasonCode.ALLOW_AUTHORIZED,
@@ -162,7 +168,6 @@ class B4CGEA(BaselineController):
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
                supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False):
         if immediate_resume and connectivity == ConnectivityState.RECOVERING:
-            # Experimental ablation path
             connectivity = ConnectivityState.CONNECTED
         return self.governor.decide(
             proposal,
@@ -177,19 +182,23 @@ class B4CGEA(BaselineController):
 
 
 class B5AdaptiveAutonomy(BaselineController):
-    """Connectivity-aware adaptive autonomy WITHOUT independent governor / capsules / provenance reauth.
+    """Connectivity-aware adaptive autonomy (no capsule / no independent governor / no provenance)."""
 
-    Decision independence changes with connectivity, but:
-      - no independent execution governor
-      - no execution-authority capsule
-      - no provenance-gated reauthorization
-    """
+    baseline_id = BaselineId.B5_NOMINAL
+    variant: str = "nominal"
 
-    baseline_id = BaselineId.B5_ADAPTIVE
+    def __init__(self, *args, variant: str = "nominal", **kwargs):
+        super().__init__(*args, **kwargs)
+        self.variant = variant
+        if variant == "conservative":
+            self.baseline_id = BaselineId.B5_CONSERVATIVE
+        elif variant == "permissive":
+            self.baseline_id = BaselineId.B5_PERMISSIVE
+        else:
+            self.baseline_id = BaselineId.B5_NOMINAL
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
                supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False):
-        # Adaptive policy table — NOT the CGEA governor path
         if proposal.risk_class == RiskClass.LOW:
             return self.governor._log(
                 GovernorDecision.ALLOW,
@@ -200,81 +209,69 @@ class B5AdaptiveAutonomy(BaselineController):
                 None,
             )
 
+        v = self.variant
+
+        # --- conservative: consequential only under CONNECTED + supervisor ---
+        if v == "conservative":
+            if connectivity == ConnectivityState.CONNECTED and supervisor_reachable:
+                return self.governor._log(
+                    GovernorDecision.ALLOW, ReasonCode.ALLOW_AUTHORIZED, proposal, connectivity, None, None
+                )
+            if connectivity == ConnectivityState.DEGRADED:
+                return self.governor._log(
+                    GovernorDecision.DEFER, ReasonCode.DEFER_DEGRADED, proposal, connectivity, None, None
+                )
+            return self.governor._log(
+                GovernorDecision.DENY, ReasonCode.DENY_CONNECTIVITY_POLICY, proposal, connectivity, None, None
+            )
+
+        # --- permissive: allow consequential in essentially all states ---
+        if v == "permissive":
+            return self.governor._log(
+                GovernorDecision.ALLOW, ReasonCode.ALLOW_AUTHORIZED, proposal, connectivity, None, None
+            )
+
+        # --- nominal (default adaptive autonomy) ---
         if connectivity == ConnectivityState.CONNECTED:
             return self.governor._log(
-                GovernorDecision.ALLOW,
-                ReasonCode.ALLOW_AUTHORIZED,
-                proposal,
-                connectivity,
-                None,
-                None,
+                GovernorDecision.ALLOW, ReasonCode.ALLOW_AUTHORIZED, proposal, connectivity, None, None
             )
         if connectivity == ConnectivityState.DEGRADED:
-            # Allow consequential with lower confidence bar only if supervisor recently seen —
-            # but no capsule / governor / provenance
             if supervisor_reachable:
                 return self.governor._log(
-                    GovernorDecision.ALLOW,
-                    ReasonCode.ALLOW_AUTHORIZED,
-                    proposal,
-                    connectivity,
-                    None,
-                    None,
+                    GovernorDecision.ALLOW, ReasonCode.ALLOW_AUTHORIZED, proposal, connectivity, None, None
                 )
             return self.governor._log(
-                GovernorDecision.DEFER,
-                ReasonCode.DEFER_DEGRADED,
-                proposal,
-                connectivity,
-                None,
-                None,
+                GovernorDecision.DEFER, ReasonCode.DEFER_DEGRADED, proposal, connectivity, None, None
             )
         if connectivity in (ConnectivityState.PARTITIONED, ConnectivityState.ISOLATED):
-            # Unrestricted local autonomy for consequential under partition (no capsule)
             return self.governor._log(
-                GovernorDecision.ALLOW,
-                ReasonCode.ALLOW_AUTHORIZED,
-                proposal,
-                connectivity,
-                None,
-                None,
+                GovernorDecision.ALLOW, ReasonCode.ALLOW_AUTHORIZED, proposal, connectivity, None, None
             )
         if connectivity == ConnectivityState.RECOVERING:
-            if immediate_resume:
-                return self.governor._log(
-                    GovernorDecision.ALLOW,
-                    ReasonCode.ALLOW_AUTHORIZED,
-                    proposal,
-                    connectivity,
-                    None,
-                    None,
-                )
-            # B5 has no provenance-gated block — only soft defer
             return self.governor._log(
-                GovernorDecision.ALLOW,
-                ReasonCode.ALLOW_AUTHORIZED,
-                proposal,
-                connectivity,
-                None,
-                None,
+                GovernorDecision.ALLOW, ReasonCode.ALLOW_AUTHORIZED, proposal, connectivity, None, None
             )
         return self.governor._log(
-            GovernorDecision.DENY,
-            ReasonCode.DENY_CONNECTIVITY_POLICY,
-            proposal,
-            connectivity,
-            None,
-            None,
+            GovernorDecision.DENY, ReasonCode.DENY_CONNECTIVITY_POLICY, proposal, connectivity, None, None
         )
 
 
 def make_baseline(baseline: str | BaselineId, planner: MissionPlanner, adapter: ExecutionAdapter) -> BaselineController:
-    bid = BaselineId(baseline) if not isinstance(baseline, BaselineId) else baseline
+    key = baseline.value if isinstance(baseline, BaselineId) else str(baseline)
+    if key in ("B5", "B5_nominal"):
+        return B5AdaptiveAutonomy(planner, adapter, variant="nominal")
+    if key == "B5_conservative":
+        return B5AdaptiveAutonomy(planner, adapter, variant="conservative")
+    if key == "B5_permissive":
+        return B5AdaptiveAutonomy(planner, adapter, variant="permissive")
+
     mapping = {
-        BaselineId.B1_CENTRALIZED: B1Centralized,
-        BaselineId.B2_UNRESTRICTED: B2Unrestricted,
-        BaselineId.B3_STATIC_BOUNDED: B3StaticBounded,
-        BaselineId.B4_CGEA: B4CGEA,
-        BaselineId.B5_ADAPTIVE: B5AdaptiveAutonomy,
+        "B1": B1Centralized,
+        "B2": B2Unrestricted,
+        "B3": B3StaticBounded,
+        "B4": B4CGEA,
     }
-    return mapping[bid](planner, adapter)
+    if key not in mapping:
+        raise KeyError(f"Unknown baseline {key}")
+    return mapping[key](planner, adapter)

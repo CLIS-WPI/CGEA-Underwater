@@ -1,0 +1,88 @@
+{
+  "mission_completion_ratio": 1.0,
+  "mission_utility": 11.97552,
+  "unauthorized_high_risk_action_rate": 0.0,
+  "governance_false_denial_rate": 0.0,
+  "useful_action_retention": 1.0,
+  "governance_bytes": 73728,
+  "total_communication_bytes": 71424,
+  "governance_communication_overhead": 1.032258064516129,
+  "reconciliation_latency_s": 0.0,
+  "conflict_count": 0,
+  "energy_propulsion_j": 23220.0,
+  "energy_communication_j": 71.424,
+  "energy_compute_j": 1260.0,
+  "provenance": {
+    "git_commit": "f36ecff734f06d3060c99f293402bac8c9ae532d",
+    "configuration_hash": "05004585b073ce93",
+    "random_seed": 0,
+    "baseline": "B5_nominal",
+    "channel_trace_id": "tr_a3ed8a75ed40",
+    "environment_id": "paper_ssp_200m_v1",
+    "notes": "outage_duration_s=0.0"
+  },
+  "extra": {
+    "outage_duration_s": 0.0,
+    "outage_start_s": null,
+    "outage_end_s": null,
+    "high_risk_action_count": 0,
+    "consequential_proposed": 10,
+    "consequential_allowed": 10,
+    "false_denial_count": 0,
+    "decisions_allow": 1080,
+    "decisions_deny": 0,
+    "decisions_defer": 0,
+    "proposed_by_type": {
+      "repeat_sonar_scan": 36,
+      "enter_exclusion_zone": 10,
+      "bounded_path_correction": 1034
+    },
+    "decision_by_type": {
+      "repeat_sonar_scan": {
+        "ALLOW": 36,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "enter_exclusion_zone": {
+        "ALLOW": 10,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "bounded_path_correction": {
+        "ALLOW": 1034,
+        "DENY": 0,
+        "DEFER": 0
+      }
+    },
+    "decision_by_risk_class": {
+      "low": {
+        "ALLOW": 1070,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "consequential": {
+        "ALLOW": 10,
+        "DENY": 0,
+        "DEFER": 0
+      }
+    },
+    "connectivity_state_occupancy": {
+      "CONNECTED": 0.3851851851851852,
+      "DEGRADED": 0.6148148148148148,
+      "PARTITIONED": 0.0,
+      "ISOLATED": 0.0,
+      "RECOVERING": 0.0
+    },
+    "connectivity_state_ticks": {
+      "CONNECTED": 416,
+      "DEGRADED": 664,
+      "PARTITIONED": 0,
+      "ISOLATED": 0,
+      "RECOVERING": 0
+    },
+    "trace_backend": "aubellhop",
+    "allow_fallback": false,
+    "use_sionna_bridge": true,
+    "sionna_device": "cuda:0"
+  }
+}

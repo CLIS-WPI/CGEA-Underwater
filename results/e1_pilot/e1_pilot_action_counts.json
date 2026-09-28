@@ -1,0 +1,24 @@
+{
+  "proposed_by_type_total": {
+    "repeat_sonar_scan": 2268,
+    "enter_exclusion_zone": 540,
+    "bounded_path_correction": 64440
+  },
+  "decision_by_type_total": {
+    "repeat_sonar_scan": {
+      "ALLOW": 2268,
+      "DENY": 0,
+      "DEFER": 0
+    },
+    "enter_exclusion_zone": {
+      "ALLOW": 384,
+      "DENY": 108,
+      "DEFER": 48
+    },
+    "bounded_path_correction": {
+      "ALLOW": 64440,
+      "DENY": 0,
+      "DEFER": 0
+    }
+  }
+}
