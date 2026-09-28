@@ -10,3 +10,8 @@ build/
 outputs/
 .ipynb_checkpoints/
 src/cgea.egg-info/
+.DS_Store
+
+# Local wrap / scratch (historical tracked campaigns under results/ stay in git)
+results/e1_pilot_v2/
+results/e1_v3_diagnosis/B4/

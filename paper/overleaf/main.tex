@@ -1,0 +1,68 @@
+\documentclass[journal]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{booktabs}
+
+\begin{document}
+
+\title{Connectivity-Governed Execution Authority for Agentic Edge Computing in Intermittently Connected Underwater Networks}
+
+\author{IEEE Communications Magazine~---~draft companion to the CGEA underwater repository%
+\thanks{Experimental freeze and campaign status: \texttt{docs/EXPERIMENT\_STATUS.md} in the companion repository.}}
+
+\maketitle
+
+\begin{abstract}
+Underwater acoustic networks are intermittently connected: authority, telemetry, and task coordination do not share a reliable control channel. We specify \emph{Connectivity-Governed Execution Authority} (CGEA), a non-LLM execution governor that contracts an authority capsule as connectivity and freshness degrade. The scientific design is frozen: paper-risk-bounded capsule grants, locked utility, and a safe-useful-retention metric that does not penalize refusal of mission-beneficial but hard-safety-violating actions. Validation uses Bellhop-generated channels, a Sionna OFDM Monte Carlo PHY, and shared GPU traces replayed by five baselines.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Underwater acoustic networks, agentic edge computing, execution authority, intermittent connectivity.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Agentic edge systems propose actions under local observations. In underwater acoustic settings, partitions and delay make unsupervised consequential actions a safety problem, not only a throughput problem~\cite{akyildiz2005,stojanovic2007}. CGEA separates a heuristic mission planner from a deterministic governor. The governor cannot be bypassed. Capsules are issued by a gateway and contract with authority age; they are not learned policies.
+
+This draft does \textbf{not} treat diagnostic $n{=}3$ campaigns as paper evidence. Production tables and the four manuscript figures are generated only from the frozen $n{=}10$ grid documented in the companion repository.
+
+\section{CGEA in brief}
+
+A proposal carries action type, energy, risk class, and rationale. The governor returns ALLOW, DENY, or DEFER with a reason code. \textbf{Low-risk} inspection actions are allowed when not otherwise expired. Four hard-safety classes remain \textbf{forbidden} under the paper capsule even when the capsule is fresh: exclusion-zone entry, reserve violation, abandoning a mandatory segment, and changing the high-level objective. \textbf{Reassignment} of a failed vehicle's incomplete mandatory segment is \textbf{conditional}: the target must be failed, the segment mandatory and incomplete, and the capsule recruit limit must not be exceeded. The governor evaluates that condition; it does not blindly defer every conditional action under PARTITIONED, and it does not copy the evaluation oracle at runtime.
+
+Freshness bands (aging 180\,s, stale 400\,s, hard expiry 900\,s, refresh 60\,s) contract allowed sets further. They are not retuned from experimental outcomes. After a forced outage, reconciliation is per vehicle: DIGEST, optional PROVENANCE, RECONCILE, AUTHORITY. A vehicle may leave RECOVERING when \emph{its} digest succeeds. Governance packets follow the existing connectivity-graph shortest path; DATA cannot occupy a small reserved queue tail. That is not a new MAC or routing protocol.
+
+\section{Experiment freeze}
+
+Utility weights are locked as \texttt{utility\_v2\_frozen\_2026-09-28}. The primary retention metric is
+\[
+\text{safe useful retention}
+=
+\frac{
+\#\{\text{ALLOW}\cap\text{beneficial}\cap\neg\text{hard-safety}\}
+}{
+\#\{\text{proposed}\cap\text{beneficial}\cap\neg\text{hard-safety}\}
+},
+\]
+frozen as \texttt{safe\_useful\_retention\_v1\_2026-09-28}. Legacy useful retention is retained in logs only.
+
+Channels: three predeclared SSPs at 200\,m; GPU PHY traces; one \texttt{trace\_id} per (environment, seed); baselines B1--B5 including a-priori B5 conservative/nominal/permissive. Outage durations $\{0,150,300,500,750,1000\}$\,s on a 1400\,s mission. Pairwise comparisons share the same trace: primarily B4${}-{}$B5$_{\text{nominal}}$, also B4${}-{}$B3. B5 conservative and permissive are robustness bounds.
+
+Propagation uses Bellhop/AUBellhop~\cite{porter2011}; Sionna~\cite{hoydis2022sionna} is used for OFDM Monte Carlo, not as a radio geometric underwater model.
+
+\section{What this paper will and will not claim}
+
+CGEA claims \emph{risk-bounded execution authority} only insofar as the frozen capsule forbids the four hard-safety classes independently of expiry, and contracts further when stale. It does not claim learned planning~\cite{chen2023agents}. Diagnostic campaigns established that a broad capsule plus capsule-id conflict scoring and all-to-all digest barriers are not paper-valid; those folders remain in \texttt{results/} for provenance and are not manuscript evidence.
+
+Production headline metrics: mission utility; hard-safety violation rate; safe useful retention; semantic conflicts by kind; governance, mission, and total TX bytes; GCO; per-AUV reauthorization fraction, latency, and timeout fraction.
+
+\section*{Acknowledgment}
+
+Companion code and frozen configs: CGEA-Underwater repository, commit documented in each production row's \texttt{git\_commit}.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
