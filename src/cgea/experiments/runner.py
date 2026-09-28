@@ -24,10 +24,12 @@ from cgea.governance import (
     FreshnessPolicy,
     GovernorDecision,
     NodeJournalEntry,
+    PAPER_POLICY_VERSION,
     authority_age,
     classify_freshness,
     issue_capsule,
     make_digest,
+    reassign_condition_satisfied,
     reconcile_partitions,
 )
 from cgea.governance.semantic_conflicts import detect_semantic_conflicts
@@ -39,12 +41,13 @@ from cgea.experiments.paper_gates import (
     assert_trace_paper_meta,
 )
 from cgea.metrics import RunMetrics, compute_overhead, save_metrics
-from cgea.mission import CONSEQUENTIAL_ACTIONS, RiskClass, build_pipeline_mission
+from cgea.mission import CONSEQUENTIAL_ACTIONS, ActionType, RiskClass, build_pipeline_mission
 from cgea.mission.oracle import oracle_label
 from cgea.mission.utility import UTILITY_FREEZE_ID, world_utility
 from cgea.network import Packet, PacketType, UnderwaterNetwork
 from cgea.types import Position3D, Provenance, config_hash, git_commit
 
+SAFE_USEFUL_RETENTION_FREEZE_ID = "safe_useful_retention_v1_2026-09-28"
 DISCONNECTED_LIKE = {
     ConnectivityState.PARTITIONED,
     ConnectivityState.ISOLATED,
@@ -243,7 +246,14 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
 
     env = simpy.Environment()
     node_ids = list(world.auvs.keys())
-    net = UnderwaterNetwork(env, node_ids, world.gateway_id, trace, queue_limit=int(cfg.network.queue_limit))
+    net = UnderwaterNetwork(
+        env,
+        node_ids,
+        world.gateway_id,
+        trace,
+        queue_limit=int(cfg.network.queue_limit),
+        governance_reserved_queue_slots=int(cfg.network.get("governance_reserved_queue_slots", 4)),
+    )
 
     planner = MissionPlanner(
         consequential_period_s=float(cfg.agent.consequential_period_s),
@@ -265,8 +275,19 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     soft_h = float(cfg.governance.soft_expiry_s)
     hard_h = float(cfg.governance.hard_expiry_s)
 
+    gcfg = cfg.governance.get("capsule_grants")
+    capsule_grants = None
+    if gcfg:
+        capsule_grants = {
+            "conditional": [str(x) for x in list(gcfg.get("conditional", []))],
+            "forbid": [str(x) for x in list(gcfg.get("forbid", []))],
+        }
+    policy_version = str(cfg.governance.get("policy_version", PAPER_POLICY_VERSION))
+
     capsules = {
-        aid: issue_capsule(aid, world.mission_id, 0.0, world.gateway_id, soft_h, hard_h, broad=True)
+        aid: issue_capsule(
+            aid, world.mission_id, 0.0, world.gateway_id, soft_h, hard_h, broad=False, grants=capsule_grants
+        )
         for aid in node_ids
         if not world.auvs[aid].is_gateway
     }
@@ -299,6 +320,8 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     denied_consequential = 0
     useful_cons_allowed = 0
     useful_cons_proposed = 0
+    safe_useful_allowed = 0
+    safe_useful_proposed = 0
     recovering = False
     recon_latency = 0.0
     conflict_count = 0
@@ -309,6 +332,11 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     digest_ok: set[str] = set()
     digest_attempts: dict[str, int] = {}
     digest_last_try: dict[str, float] = {}
+    recovering_ids: set[str] = set()
+    reauth_ok: set[str] = set()
+    reauth_latency: dict[str, float] = {}
+    recon_timeout_ids: set[str] = set()
+    recruits_used: dict[str, int] = {}
     hard_safety_allow = 0
     reason_counts: dict[str, int] = {}
     recon_cfg = cfg.governance.get("reconciliation", {})
@@ -347,8 +375,10 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         nonlocal decisions_allow, decisions_deny, decisions_defer
         nonlocal consequential_proposed, consequential_allowed, high_risk_action_count
         nonlocal false_denials, denied_consequential, useful_cons_allowed, useful_cons_proposed
+        nonlocal safe_useful_allowed, safe_useful_proposed
         nonlocal recovering, recon_done, recon_latency, conflict_count
         nonlocal recon_active, recon_start_s, recon_status, hard_safety_allow
+        nonlocal recovering_ids
 
         while env.now < duration:
             t = env.now
@@ -364,35 +394,90 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     net.force_partitions([g1, g2])
             elif t >= outage_end and net._forced_partition_groups is not None and not recon_done:
                 net.force_partitions(None)
-                recovering = True
+                recovering_ids = set(capsules)
                 recon_active = True
                 recon_start_s = float(t)
                 recon_status = "digest"
                 digest_ok.clear()
                 digest_attempts.clear()
                 digest_last_try.clear()
+                reauth_ok.clear()
+                reauth_latency.clear()
+                recon_timeout_ids.clear()
                 recon_done = True
                 if immediate_resume:
-                    recovering = False
+                    recovering_ids.clear()
                     recon_active = False
                     recon_status = "immediate"
                     recon_latency = 0.0
 
-            if recon_active and recovering:
-                for aid in list(capsules):
+            if recon_active:
+                for aid in list(recovering_ids):
                     for d in net.deliveries:
                         pkt = d.packet
+                        origin = pkt.origin or pkt.src
+                        final = pkt.final_dst or pkt.dst
                         if (
                             d.success
                             and pkt.ptype == PacketType.DIGEST
-                            and pkt.src == aid
+                            and origin == aid
                             and pkt.dst == world.gateway_id
+                            and final == world.gateway_id
                         ):
                             digest_ok.add(aid)
                             break
+                    if aid in digest_ok:
+                        net.send(
+                            Packet(
+                                packet_id=f"prov-{aid}-{t}",
+                                src=aid,
+                                dst=world.gateway_id,
+                                ptype=PacketType.PROVENANCE,
+                                size_bytes=provenance_bytes,
+                                payload={"ownership_hash": make_digest(aid, journals.get(aid, [])).ownership_hash},
+                                created_at=t,
+                            )
+                        )
+                        net.send(
+                            Packet(
+                                packet_id=f"reconcile-gw-{aid}-{t}",
+                                src=world.gateway_id,
+                                dst=aid,
+                                ptype=PacketType.RECONCILE,
+                                size_bytes=reconcile_bytes,
+                                payload={"status": "commit", "subject": aid},
+                                created_at=t,
+                            )
+                        )
+                        capsules[aid] = issue_capsule(
+                            aid,
+                            world.mission_id,
+                            env.now,
+                            world.gateway_id,
+                            soft_h,
+                            hard_h,
+                            broad=False,
+                            grants=capsule_grants,
+                        )
+                        last_auth[aid] = env.now
+                        net.send(
+                            Packet(
+                                packet_id=f"auth-reauth-{aid}-{t}",
+                                src=world.gateway_id,
+                                dst=aid,
+                                ptype=PacketType.AUTHORITY,
+                                size_bytes=int(cfg.governance.authority_capsule_bytes),
+                                payload={"capsule_id": capsules[aid].capsule_id},
+                                created_at=t,
+                            )
+                        )
+                        reauth_ok.add(aid)
+                        reauth_latency[aid] = float(t) - float(recon_start_s or t)
+                        recovering_ids.discard(aid)
+                        continue
                     ntry = digest_attempts.get(aid, 0)
                     last = digest_last_try.get(aid, -1e18)
-                    if aid not in digest_ok and ntry < digest_max_retries and (t - last) >= digest_retry_s - 1e-9:
+                    if ntry < digest_max_retries and (t - last) >= digest_retry_s - 1e-9:
                         dgst = make_digest(aid, journals.get(aid, []))
                         net.send(
                             Packet(
@@ -407,60 +492,19 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                         )
                         digest_attempts[aid] = ntry + 1
                         digest_last_try[aid] = float(t)
-                pending = [a for a in capsules if a not in digest_ok]
-                stalled = [a for a in pending if digest_attempts.get(a, 0) >= digest_max_retries]
-                if not pending:
-                    digests = [make_digest(nid, journals[nid]) for nid in journals]
-                    hashes = {d.ownership_hash for d in digests}
-                    if len(hashes) > 1:
-                        for aid in capsules:
-                            net.send(
-                                Packet(
-                                    packet_id=f"prov-{aid}-{t}",
-                                    src=aid,
-                                    dst=world.gateway_id,
-                                    ptype=PacketType.PROVENANCE,
-                                    size_bytes=provenance_bytes,
-                                    payload={"ownership_hash": make_digest(aid, journals[aid]).ownership_hash},
-                                    created_at=t,
-                                )
-                            )
-                    net.send(
-                        Packet(
-                            packet_id=f"reconcile-gw-{t}",
-                            src=world.gateway_id,
-                            dst=next(iter(capsules)),
-                            ptype=PacketType.RECONCILE,
-                            size_bytes=reconcile_bytes,
-                            payload={"status": "commit"},
-                            created_at=t,
-                        )
-                    )
-                    for aid in capsules:
-                        capsules[aid] = issue_capsule(
-                            aid, world.mission_id, env.now, world.gateway_id, soft_h, hard_h, broad=True
-                        )
-                        last_auth[aid] = env.now
-                        net.send(
-                            Packet(
-                                packet_id=f"auth-reauth-{aid}-{t}",
-                                src=world.gateway_id,
-                                dst=aid,
-                                ptype=PacketType.AUTHORITY,
-                                size_bytes=int(cfg.governance.authority_capsule_bytes),
-                                payload={"capsule_id": capsules[aid].capsule_id},
-                                created_at=t,
-                            )
-                        )
-                    recovering = False
+                    elif ntry >= digest_max_retries:
+                        recon_timeout_ids.add(aid)
+                        recovering_ids.discard(aid)
+                if not recovering_ids:
                     recon_active = False
-                    recon_status = "ok"
-                    recon_latency = float(t) - float(recon_start_s or t)
-                elif pending and len(stalled) == len(pending):
-                    recovering = False
-                    recon_active = False
-                    recon_status = "timeout"
-                    recon_latency = float(t) - float(recon_start_s or t)
+                    n_auvs = max(len(capsules), 1)
+                    if len(reauth_ok) == n_auvs:
+                        recon_status = "ok"
+                    elif reauth_ok:
+                        recon_status = "partial"
+                    else:
+                        recon_status = "timeout"
+                    recon_latency = max(reauth_latency.values()) if reauth_latency else float(t) - float(recon_start_s or t)
 
             world.time_s = float(env.now)
             g = net.connectivity_graph()
@@ -478,7 +522,14 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     last_supervisor[aid] = env.now
                     if env.now - last_auth[aid] > float(cfg.governance.authority_refresh_s):
                         capsules[aid] = issue_capsule(
-                            aid, world.mission_id, env.now, world.gateway_id, soft_h, hard_h, broad=True
+                            aid,
+                            world.mission_id,
+                            env.now,
+                            world.gateway_id,
+                            soft_h,
+                            hard_h,
+                            broad=False,
+                            grants=capsule_grants,
                         )
                         last_auth[aid] = env.now
                         pkt = Packet(
@@ -510,7 +561,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     partition_size=part_size,
                     local_population=len(node_ids),
                 )
-                conn = classifier.classify(metrics, recovering=recovering)
+                conn = classifier.classify(metrics, recovering=(aid in recovering_ids))
                 _bump(connectivity_ticks, conn.value)
 
                 age_s = authority_age(env.now, last_auth[aid])
@@ -529,10 +580,24 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     label = oracle_label(proposal, world)
                     if label.mission_beneficial:
                         useful_cons_proposed += 1
+                    if label.mission_beneficial and not label.violates_frozen_risk:
+                        safe_useful_proposed += 1
                     _bump(coverage_by_class.setdefault(atype, {"proposed": 0, "ALLOW": 0, "DENY": 0, "DEFER": 0}), "proposed")
                     _bump(coverage_by_conn[conn.value], "proposed")
                     _bump(coverage_by_fresh[freshness.value], "proposed")
 
+                cond_ok = False
+                if proposal.action_type.value == ActionType.REASSIGN_ANOTHER_AUV.value:
+                    seg_id = proposal.parameters.get("segment_id")
+                    seg = world.segments.get(seg_id) if seg_id else None
+                    cond_ok = reassign_condition_satisfied(
+                        proposal,
+                        world.failed_auv_ids,
+                        bool(seg and seg.mandatory),
+                        bool(seg and (not seg.completed) and (not seg.abandoned)),
+                        int(recruits_used.get(aid, 0)),
+                        int(capsules[aid].max_neighbor_recruits),
+                    )
                 result = controller.decide(
                     proposal,
                     conn,
@@ -545,6 +610,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     freshness_mode=freshness_mode,
                     immediate_resume=immediate_resume,
                     violates_frozen_risk=bool(label.violates_frozen_risk) if label is not None else False,
+                    conditional_ok=cond_ok,
                 )
                 _bump(reason_counts, result.reason_code.value)
 
@@ -564,6 +630,10 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                         consequential_allowed += 1
                         if label is not None and label.mission_beneficial:
                             useful_cons_allowed += 1
+                        if label is not None and label.mission_beneficial and not label.violates_frozen_risk:
+                            safe_useful_allowed += 1
+                        if proposal.action_type.value == ActionType.REASSIGN_ANOTHER_AUV.value:
+                            recruits_used[aid] = int(recruits_used.get(aid, 0)) + 1
                         if conn in DISCONNECTED_LIKE or not gw_reach:
                             high_risk_action_count += 1
                         if label is not None and label.violates_frozen_risk:
@@ -685,6 +755,10 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     unauth_rate = high_risk_action_count / max(consequential_proposed, 1)
     false_denial_rate = false_denials / max(denied_consequential, 1)
     retention = useful_cons_allowed / max(useful_cons_proposed, 1)
+    safe_retention = safe_useful_allowed / max(safe_useful_proposed, 1)
+    n_subjects = max(len(capsules), 1)
+    auv_reauth_fraction = len(reauth_ok) / n_subjects if recon_status != "idle" else None
+    auv_timeout_fraction = len(recon_timeout_ids) / n_subjects if recon_status != "idle" else None
 
     energy_p = sum(a.energy.propulsion_j for a in world.auvs.values())
     energy_c = sum(a.energy.communication_j for a in world.auvs.values()) + 0.001 * total_bytes
@@ -734,7 +808,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         energy_compute_j=energy_k,
         provenance=prov,
         extra={
-            "gco_convention": "governance_TX_bytes / total_TX_bytes",
+            "policy_version": policy_version,
             "tx_bytes": int(acc["tx"]),
             "rx_bytes": int(acc["rx"]),
             "governance_tx_bytes": int(acc["governance_tx"]),
@@ -767,6 +841,15 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             "useful_consequential_proposed": useful_cons_proposed,
             "useful_consequential_allowed": useful_cons_allowed,
             "useful_consequential_retention": retention,
+            "safe_useful_retention_freeze_id": SAFE_USEFUL_RETENTION_FREEZE_ID,
+            "safe_useful_proposed": safe_useful_proposed,
+            "safe_useful_allowed": safe_useful_allowed,
+            "safe_useful_retention": safe_retention,
+            "auv_reauth_ok": sorted(reauth_ok),
+            "auv_reauth_latency_s": reauth_latency,
+            "auv_reauth_fraction": auv_reauth_fraction,
+            "auv_timeout_ids": sorted(recon_timeout_ids),
+            "auv_timeout_fraction": auv_timeout_fraction,
             "denied_consequential": denied_consequential_log[:200],
             "decisions_allow": decisions_allow,
             "decisions_deny": decisions_deny,

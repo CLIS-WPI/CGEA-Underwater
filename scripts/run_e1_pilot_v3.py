@@ -61,7 +61,11 @@ def load_base_cfg(acoustic_path: Path):
                 "traces": str(ROOT / "traces"),
                 "results": str(ROOT / "results"),
             },
-            "network": {"queue_limit": 32, "header_bytes": 32},
+            "network": {
+                "queue_limit": 32,
+                "header_bytes": 32,
+                "governance_reserved_queue_slots": 4,
+            },
             "agent": {"consequential_period_s": 120.0},
             "scenario": {
                 "outage_start_s": 200.0,

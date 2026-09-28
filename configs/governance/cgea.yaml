@@ -6,7 +6,23 @@ authority_capsule_bytes: 256
 freshness_mode: continuous  # continuous | binary | disabled
 immediate_resume: false
 
+# Predeclared paper capsule grants (2026-09-28). Not an oracle copy, not a
+# hidden retune of aging/stale/hard expiry. E1-v3 used implicit broad=True.
+policy_version: paper_risk_bounded_v1_2026-09-28
+capsule_grants:
+  conditional:
+    - reassign_another_auv
+  forbid:
+    - enter_exclusion_zone
+    - exceed_return_energy_reserve
+    - abandon_mandatory_inspection
+    - change_high_level_objective
+
 # Packetized reconciliation (not a freshness-threshold retune).
+# Per-AUV DIGEST→PROVENANCE→RECONCILE→AUTHORITY; no all-clear barrier.
+# Metric freeze: safe_useful_retention_v1_2026-09-28
+#   = ALLOW ∩ {mission_beneficial ∧ ¬violates_frozen_risk}
+#     / proposed ∩ {mission_beneficial ∧ ¬violates_frozen_risk}
 reconciliation:
   digest_max_retries: 3
   digest_retry_s: 20.0

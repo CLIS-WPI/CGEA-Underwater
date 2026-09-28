@@ -15,6 +15,7 @@ def test_capsule_schema_and_hash():
     assert cap.capsule_id.startswith("cap_")
     assert cap.soft_expiry < cap.hard_expiry
     assert cap.allowed_actions
+    assert cap.forbidden_actions
     assert cap.fallback_action
     h1 = cap.deterministic_hash()
     h2 = cap.deterministic_hash()

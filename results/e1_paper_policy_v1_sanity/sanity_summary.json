@@ -1,0 +1,329 @@
+{
+  "n": 27,
+  "policy_version": "paper_risk_bounded_v1_2026-09-28",
+  "reconciliation_success_rate_disconnected": 0.0,
+  "mean_auv_reauth_fraction_disconnected": 0.3611111111111111,
+  "recon_status_counts": {
+    "partial": 18,
+    "idle": 9
+  },
+  "by_baseline": {
+    "B3": {
+      "mean_utility": -30.045566666666666,
+      "mean_retention_legacy": 0.0,
+      "mean_safe_useful_retention": 0.0,
+      "mean_violation_per_proposal": 0.0,
+      "mean_hard_safety_count": 0.0,
+      "mean_conflicts": 0.0,
+      "mean_gco": 0.5920472642168388,
+      "mean_auv_reauth_fraction": 0.36111111111111116,
+      "mean_auv_timeout_fraction": 0.638888888888889,
+      "mean_governance_tx_bytes": 65848.88888888889,
+      "recon_ok_disconnected": 0,
+      "recon_partial_disconnected": 6,
+      "recon_n_disconnected": 6
+    },
+    "B4": {
+      "mean_utility": -5.379033333333333,
+      "mean_retention_legacy": 0.01080036658578033,
+      "mean_safe_useful_retention": 0.8666666666666667,
+      "mean_violation_per_proposal": 0.0,
+      "mean_hard_safety_count": 0.0,
+      "mean_conflicts": 0.6666666666666666,
+      "mean_gco": 0.5920472642168388,
+      "mean_auv_reauth_fraction": 0.36111111111111116,
+      "mean_auv_timeout_fraction": 0.638888888888889,
+      "mean_governance_tx_bytes": 65848.88888888889,
+      "recon_ok_disconnected": 0,
+      "recon_partial_disconnected": 6,
+      "recon_n_disconnected": 6
+    },
+    "B5_nominal": {
+      "mean_utility": -48.751866666666665,
+      "mean_retention_legacy": 1.0,
+      "mean_safe_useful_retention": 1.0,
+      "mean_violation_per_proposal": 0.9492367733610299,
+      "mean_hard_safety_count": 77.0,
+      "mean_conflicts": 6.333333333333333,
+      "mean_gco": 0.6563207989117925,
+      "mean_auv_reauth_fraction": 0.36111111111111116,
+      "mean_auv_timeout_fraction": 0.638888888888889,
+      "mean_governance_tx_bytes": 65848.88888888889,
+      "recon_ok_disconnected": 0,
+      "recon_partial_disconnected": 6,
+      "recon_n_disconnected": 6
+    }
+  },
+  "b4_freshness": [
+    {
+      "fresh": {
+        "proposed": 344,
+        "ALLOW": 1,
+        "DENY": 343,
+        "DEFER": 0,
+        "fraction_of_consequential": 1.0
+      },
+      "aging": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      },
+      "stale": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      },
+      "hard_expired": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      }
+    },
+    {
+      "fresh": {
+        "proposed": 274,
+        "ALLOW": 4,
+        "DENY": 270,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.7828571428571428
+      },
+      "aging": {
+        "proposed": 46,
+        "ALLOW": 0,
+        "DENY": 46,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.13142857142857142
+      },
+      "stale": {
+        "proposed": 30,
+        "ALLOW": 0,
+        "DENY": 30,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.08571428571428572
+      },
+      "hard_expired": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      }
+    },
+    {
+      "fresh": {
+        "proposed": 174,
+        "ALLOW": 4,
+        "DENY": 170,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.48739495798319327
+      },
+      "aging": {
+        "proposed": 46,
+        "ALLOW": 0,
+        "DENY": 46,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.12885154061624648
+      },
+      "stale": {
+        "proposed": 107,
+        "ALLOW": 0,
+        "DENY": 107,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.29971988795518206
+      },
+      "hard_expired": {
+        "proposed": 30,
+        "ALLOW": 0,
+        "DENY": 30,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.08403361344537816
+      }
+    },
+    {
+      "fresh": {
+        "proposed": 344,
+        "ALLOW": 1,
+        "DENY": 343,
+        "DEFER": 0,
+        "fraction_of_consequential": 1.0
+      },
+      "aging": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      },
+      "stale": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      },
+      "hard_expired": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      }
+    },
+    {
+      "fresh": {
+        "proposed": 274,
+        "ALLOW": 4,
+        "DENY": 270,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.7828571428571428
+      },
+      "aging": {
+        "proposed": 46,
+        "ALLOW": 0,
+        "DENY": 46,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.13142857142857142
+      },
+      "stale": {
+        "proposed": 30,
+        "ALLOW": 0,
+        "DENY": 30,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.08571428571428572
+      },
+      "hard_expired": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      }
+    },
+    {
+      "fresh": {
+        "proposed": 174,
+        "ALLOW": 4,
+        "DENY": 170,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.48739495798319327
+      },
+      "aging": {
+        "proposed": 46,
+        "ALLOW": 0,
+        "DENY": 46,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.12885154061624648
+      },
+      "stale": {
+        "proposed": 107,
+        "ALLOW": 0,
+        "DENY": 107,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.29971988795518206
+      },
+      "hard_expired": {
+        "proposed": 30,
+        "ALLOW": 0,
+        "DENY": 30,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.08403361344537816
+      }
+    },
+    {
+      "fresh": {
+        "proposed": 344,
+        "ALLOW": 1,
+        "DENY": 343,
+        "DEFER": 0,
+        "fraction_of_consequential": 1.0
+      },
+      "aging": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      },
+      "stale": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      },
+      "hard_expired": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      }
+    },
+    {
+      "fresh": {
+        "proposed": 274,
+        "ALLOW": 4,
+        "DENY": 270,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.7828571428571428
+      },
+      "aging": {
+        "proposed": 46,
+        "ALLOW": 0,
+        "DENY": 46,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.13142857142857142
+      },
+      "stale": {
+        "proposed": 30,
+        "ALLOW": 0,
+        "DENY": 30,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.08571428571428572
+      },
+      "hard_expired": {
+        "proposed": 0,
+        "ALLOW": 0,
+        "DENY": 0,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.0
+      }
+    },
+    {
+      "fresh": {
+        "proposed": 174,
+        "ALLOW": 4,
+        "DENY": 170,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.48739495798319327
+      },
+      "aging": {
+        "proposed": 46,
+        "ALLOW": 0,
+        "DENY": 46,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.12885154061624648
+      },
+      "stale": {
+        "proposed": 107,
+        "ALLOW": 0,
+        "DENY": 107,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.29971988795518206
+      },
+      "hard_expired": {
+        "proposed": 30,
+        "ALLOW": 0,
+        "DENY": 30,
+        "DEFER": 0,
+        "fraction_of_consequential": 0.08403361344537816
+      }
+    }
+  ]
+}

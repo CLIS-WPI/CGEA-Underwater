@@ -103,3 +103,47 @@ def test_low_risk_allowed_during_recovering():
         supervisor_reachable=False,
     )
     assert result.decision == GovernorDecision.ALLOW
+
+
+def test_conditional_reassign_uses_capsule_condition_not_blind_defer():
+    world = build_pipeline_mission(n_auvs=4)
+    planner = MissionPlanner()
+    adapter = ExecutionAdapter()
+    b4 = make_baseline("B4", planner, adapter)
+    auv = [a for a in world.auvs.values() if not a.is_gateway][0]
+    failed = [a for a in world.auvs.values() if not a.is_gateway and a.auv_id != auv.auv_id][0]
+    cap = issue_capsule(auv.auv_id, world.mission_id, 0.0)
+    proposal = ActionProposal(
+        proposer_id=auv.auv_id,
+        action_type=ActionType.REASSIGN_ANOTHER_AUV,
+        parameters={"target_auv": failed.auv_id, "segment_id": failed.assigned_segment},
+        expected_energy_cost_j=10.0,
+        risk_class=RiskClass.CONSEQUENTIAL,
+        confidence=0.9,
+        mission_state_version=0,
+    )
+    ok = b4.decide(
+        proposal,
+        ConnectivityState.PARTITIONED,
+        cap,
+        last_authority_update=0.0,
+        now=10.0,
+        energy=auv.energy,
+        supervisor_reachable=False,
+        violates_frozen_risk=False,
+        conditional_ok=True,
+    )
+    assert ok.decision == GovernorDecision.ALLOW
+    deny = b4.decide(
+        proposal,
+        ConnectivityState.PARTITIONED,
+        cap,
+        last_authority_update=0.0,
+        now=10.0,
+        energy=auv.energy,
+        supervisor_reachable=False,
+        violates_frozen_risk=False,
+        conditional_ok=False,
+    )
+    assert deny.decision == GovernorDecision.DENY
+    assert deny.reason_code == ReasonCode.DENY_CONDITIONAL_UNMET

@@ -48,6 +48,9 @@ class Packet(CgeaBaseModel):
     payload: dict[str, Any] = {}
     created_at: float = 0.0
     hops: list[str] = []
+    # Logical endpoints when src/dst are the current physical hop.
+    origin: str | None = None
+    final_dst: str | None = None
 
 
 @dataclass
@@ -86,6 +89,7 @@ class UnderwaterNetwork:
         queue_limit: int = 32,
         header_bytes: int = 32,
         outage_override: dict[tuple[str, str], bool] | None = None,
+        governance_reserved_queue_slots: int = 4,
     ):
         self.env = env
         self.node_ids = list(node_ids)
@@ -94,6 +98,8 @@ class UnderwaterNetwork:
         self.queue_limit = queue_limit
         self.header_bytes = header_bytes
         self.outage_override = outage_override or {}
+        # DATA may not occupy these last slots; governance/recon may. Not a MAC redesign.
+        self.governance_reserved_queue_slots = max(0, int(governance_reserved_queue_slots))
         self.nodes = {n: NodeCommState(node_id=n) for n in node_ids}
         self.inbox: dict[str, list[Packet]] = defaultdict(list)
         self.deliveries: list[DeliveryRecord] = []
@@ -153,34 +159,105 @@ class UnderwaterNetwork:
             return True
         return nx.has_path(g, node_id, self.gateway_id)
 
-    def send(self, packet: Packet) -> simpy.events.Event:
-        return self.env.process(self._send_proc(packet))
+    def _drop(self, packet: Packet, reason: str) -> None:
+        self.nodes[packet.src].packets_dropped += 1
+        self.deliveries.append(
+            DeliveryRecord(packet=packet, delivered_at=self.env.now, success=False, reason=reason)
+        )
 
-    def _send_proc(self, packet: Packet):
-        src_state = self.nodes[packet.src]
-        if len(src_state.queue) >= self.queue_limit:
-            src_state.packets_dropped += 1
-            self.deliveries.append(
-                DeliveryRecord(packet=packet, delivered_at=self.env.now, success=False, reason="queue_full")
+    def _queue_accepts(self, packet: Packet) -> bool:
+        qlen = len(self.nodes[packet.src].queue)
+        if packet.ptype in GOVERNANCE_TX_TYPES:
+            return qlen < self.queue_limit
+        reserved = min(self.governance_reserved_queue_slots, self.queue_limit)
+        return qlen < self.queue_limit - reserved
+
+    def _enqueue(self, packet: Packet) -> None:
+        q = self.nodes[packet.src].queue
+        if packet.ptype in GOVERNANCE_TX_TYPES and q:
+            # Behind the in-flight head; ahead of waiting DATA.
+            q.insert(1, packet)
+        else:
+            q.append(packet)
+
+    def _dequeue(self, packet: Packet) -> None:
+        q = self.nodes[packet.src].queue
+        try:
+            q.remove(packet)
+        except ValueError:
+            pass
+
+    def send(self, packet: Packet) -> simpy.events.Event:
+        if packet.ptype in GOVERNANCE_TX_TYPES:
+            return self.send_routed(packet)
+        return self.env.process(self._send_hop_proc(packet))
+
+    def send_routed(self, packet: Packet) -> simpy.events.Event:
+        """Hop-by-hop along connectivity_graph shortest path. Same PHY/queue/loss per hop."""
+        return self.env.process(self._send_routed_proc(packet))
+
+    def _send_routed_proc(self, packet: Packet):
+        origin = packet.origin or packet.src
+        final_dst = packet.final_dst or packet.dst
+        current = packet.src
+        hop_i = 0
+        while current != final_dst:
+            g = self.connectivity_graph()
+            try:
+                path = nx.shortest_path(g, current, final_dst)
+            except (nx.NetworkXNoPath, nx.NodeNotFound):
+                self._drop(
+                    packet.model_copy(
+                        update={"src": current, "dst": final_dst, "origin": origin, "final_dst": final_dst}
+                    ),
+                    "no_path",
+                )
+                return
+            if len(path) < 2:
+                self._drop(
+                    packet.model_copy(
+                        update={"src": current, "dst": final_dst, "origin": origin, "final_dst": final_dst}
+                    ),
+                    "no_path",
+                )
+                return
+            nxt = path[1]
+            hop = packet.model_copy(
+                update={
+                    "src": current,
+                    "dst": nxt,
+                    "origin": origin,
+                    "final_dst": final_dst,
+                    "packet_id": f"{packet.packet_id}-h{hop_i}",
+                    "hops": list(packet.hops),
+                }
             )
+            yield from self._send_hop_proc(hop)
+            last = self.deliveries[-1]
+            if not last.success:
+                return
+            current = nxt
+            hop_i += 1
+            packet.hops = list(hop.hops)
+
+    def _send_hop_proc(self, packet: Packet):
+        src_state = self.nodes[packet.src]
+        if not self._queue_accepts(packet):
+            self._drop(packet, "queue_full")
             return
 
-        src_state.queue.append(packet)
+        self._enqueue(packet)
         # Simple FIFO: wait transmission time then propagate
         sample = self.link_sample(packet.src, packet.dst)
         if sample is None or not self.link_available(packet.src, packet.dst):
-            src_state.queue.popleft()
-            src_state.packets_dropped += 1
-            self.deliveries.append(
-                DeliveryRecord(packet=packet, delivered_at=self.env.now, success=False, reason="link_down")
-            )
+            self._dequeue(packet)
+            self._drop(packet, "link_down")
             return
 
         rate = max(sample.estimated_rate_bps, 1.0)
         tx_time = (packet.size_bytes * 8.0) / rate
         yield self.env.timeout(tx_time)
-        if src_state.queue and src_state.queue[0] is packet:
-            src_state.queue.popleft()
+        self._dequeue(packet)
 
         src_state.bytes_tx += packet.size_bytes
         src_state.packets_tx += 1

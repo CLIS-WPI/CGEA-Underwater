@@ -96,6 +96,7 @@ cgea-underwater/
 |----------|---------------|--------|
 | E1-v2 GPU n=3 | `b0d804b`, `results/e1_pilot_v2_gpu/` | Diagnostic checkpoint. Do not retune CGEA/B5/utility from it. |
 | E1-v3 GPU n=3 | `results/e1_pilot_v3_gpu/MANIFEST.md` | Diagnostic, **not paper-candidate**: every disconnected reconciliation timed out. Row metadata still stamps `GIT_COMMIT=b0d804b` because that was `HEAD` when the tables were written; the commit that adds the manifest is the snapshot of the tree that produced them. |
+| paper_risk_bounded_v1 sanity (27) | `results/e1_paper_policy_v1_sanity/MANIFEST.md` | Paper capsule grants + hop-by-hop governance + per-AUV recon. Not full production. Disconnected recon is `partial` (~36% AUV reauth). |
 
 Do not start 10-seed production from E1-v3 until reconciliation/DIGEST delivery is diagnosed.
 

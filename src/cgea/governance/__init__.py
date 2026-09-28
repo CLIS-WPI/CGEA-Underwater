@@ -51,6 +51,7 @@ class ReasonCode(str, enum.Enum):
     DENY_STATIC_BOUND = "DENY_STATIC_BOUND"
     DENY_CONNECTIVITY_POLICY = "DENY_CONNECTIVITY_POLICY"
     DEFER_PARTITION = "DEFER_PARTITION"
+    DENY_CONDITIONAL_UNMET = "DENY_CONDITIONAL_UNMET"
     DEFER_DEGRADED = "DEFER_DEGRADED"
     DEFER_AWAITING_SUPERVISOR = "DEFER_AWAITING_SUPERVISOR"
 
@@ -85,6 +86,39 @@ class AuthorityCapsule(CgeaBaseModel):
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
+def reassign_condition_satisfied(
+    proposal: ActionProposal,
+    failed_auv_ids: list[str] | set[str],
+    segment_mandatory: bool,
+    segment_incomplete: bool,
+    recruits_used: int,
+    max_recruits: int,
+) -> bool:
+    """Frozen capsule condition for CONDITIONAL reassign. Not the evaluation oracle."""
+    if proposal.action_type != ActionType.REASSIGN_ANOTHER_AUV:
+        return False
+    target = str(proposal.parameters.get("target_auv", ""))
+    if target not in set(failed_auv_ids):
+        return False
+    if not segment_mandatory or not segment_incomplete:
+        return False
+    if recruits_used >= max(0, int(max_recruits)):
+        return False
+    return True
+
+
+# Predeclared 2026-09-28. Not derived from the evaluation oracle.
+# Replaces implicit broad=True issuance used in E1-v3 diagnostic.
+PAPER_POLICY_VERSION = "paper_risk_bounded_v1_2026-09-28"
+PAPER_CONDITIONAL_ACTIONS = (ActionType.REASSIGN_ANOTHER_AUV.value,)
+PAPER_FORBIDDEN_ACTIONS = (
+    ActionType.ENTER_EXCLUSION_ZONE.value,
+    ActionType.EXCEED_RETURN_ENERGY_RESERVE.value,
+    ActionType.ABANDON_MANDATORY_INSPECTION.value,
+    ActionType.CHANGE_HIGH_LEVEL_OBJECTIVE.value,
+)
+
+
 def issue_capsule(
     subject: str,
     mission_id: str,
@@ -92,7 +126,8 @@ def issue_capsule(
     issuer: str = "gw0",
     soft_horizon_s: float = 300.0,
     hard_horizon_s: float = 900.0,
-    broad: bool = True,
+    broad: bool = False,
+    grants: dict[str, list[str]] | None = None,
 ) -> AuthorityCapsule:
     low = [a.value for a in LOW_RISK_ACTIONS]
     cons = [a.value for a in CONSEQUENTIAL_ACTIONS]
@@ -101,9 +136,13 @@ def issue_capsule(
         conditional: list[str] = []
         forbidden: list[str] = []
     else:
-        allowed = low
-        conditional = []
-        forbidden = cons
+        g = grants or {
+            "conditional": list(PAPER_CONDITIONAL_ACTIONS),
+            "forbid": list(PAPER_FORBIDDEN_ACTIONS),
+        }
+        forbidden = list(g.get("forbid", list(PAPER_FORBIDDEN_ACTIONS)))
+        conditional = list(g.get("conditional", list(PAPER_CONDITIONAL_ACTIONS)))
+        allowed = list(low) + [a for a in conditional if a not in forbidden]
 
     cap = AuthorityCapsule(
         capsule_id="",
@@ -263,6 +302,7 @@ class ExecutionGovernor:
         position: dict[str, float] | None = None,
         freshness_mode: str = "continuous",  # continuous | binary | disabled
         violates_frozen_risk: bool = False,
+        conditional_ok: bool = False,
     ) -> GovernorResult:
         age = authority_age(now, last_authority_update)
 
@@ -375,16 +415,25 @@ class ExecutionGovernor:
             )
 
         # Consequential must be in allowed or conditional
-        if action in eff.allowed_actions or action in eff.conditional_actions:
-            if connectivity == ConnectivityState.PARTITIONED and action in eff.conditional_actions:
+        if action in eff.conditional_actions:
+            if not conditional_ok:
                 return self._log(
-                    GovernorDecision.DEFER,
-                    ReasonCode.DEFER_PARTITION,
+                    GovernorDecision.DENY,
+                    ReasonCode.DENY_CONDITIONAL_UNMET,
                     proposal,
                     connectivity,
                     freshness,
                     eff.capsule_id,
                 )
+            return self._log(
+                GovernorDecision.ALLOW,
+                ReasonCode.ALLOW_AUTHORIZED,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+            )
+        if action in eff.allowed_actions:
             return self._log(
                 GovernorDecision.ALLOW,
                 ReasonCode.ALLOW_AUTHORIZED,
