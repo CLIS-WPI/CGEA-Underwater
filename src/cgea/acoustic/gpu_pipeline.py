@@ -276,6 +276,11 @@ def generate_mission_trace_gpu(
         "gpu_peak_memory_bytes": peak_mem,
         "use_sionna_bridge": True,
         "gpu_phy": True,
+        "doppler_mode": "not_modeled",
+        "doppler_limitation": (
+            "GPU PHY uses a static Bellhop CIR (multipath, attenuation, delay). "
+            "Along-path Doppler is not applied to OFDM symbols."
+        ),
         "allow_fallback": bool(engine.allow_fallback),
         "lut": lut.model_dump(),
         "note": "B1-B5 must replay this same persisted trace; SimPy does not recompute PHY.",

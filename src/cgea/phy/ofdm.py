@@ -3,6 +3,10 @@
 CIR source is Bellhop. Sionna/torch apply a generic OFDM PHY (modulation,
 AWGN, ZF equalization, BER/BLER). This is an abstraction over an acoustic
 channel, not a 3GPP TDL/CDL model.
+
+Limitation: the frequency response is static. Path delays/coefficients are not
+time-evolved with platform motion, so Doppler is not modeled. Evaluation covers
+multipath, attenuation, and delay spread only.
 """
 
 from __future__ import annotations

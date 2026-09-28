@@ -44,15 +44,6 @@ from cgea.mission.utility import UTILITY_FREEZE_ID, world_utility
 from cgea.network import Packet, PacketType, UnderwaterNetwork
 from cgea.types import Position3D, Provenance, config_hash, git_commit
 
-
-GOVERNANCE_PACKET_TYPES = {
-    PacketType.AUTHORITY,
-    PacketType.DIGEST,
-    PacketType.PROVENANCE,
-    PacketType.RECONCILE,
-    PacketType.SUPERVISOR,
-}
-
 DISCONNECTED_LIKE = {
     ConnectivityState.PARTITIONED,
     ConnectivityState.ISOLATED,
@@ -76,10 +67,17 @@ def _env_from_cfg(cfg: DictConfig) -> AcousticEnvironment:
 
 
 def ensure_trace(cfg: DictConfig, world_positions: dict[str, Position3D]) -> Any:
-    """Generate or load the shared ChannelTrace. Never regenerate per baseline."""
+    """Generate or load the shared ChannelTrace. Never regenerate per baseline.
+
+    GPU-PHY traces use a distinct trace_id suffix and must never be mixed with
+    the legacy Sionna-wrap family in one comparison.
+    """
     paper_run = not bool(cfg.acoustic.get("allow_fallback", False))
+    use_gpu_phy = bool(cfg.acoustic.get("use_gpu_phy", paper_run))
     if paper_run:
         assert_paper_config(cfg)
+        if not use_gpu_phy:
+            raise PaperAssertionError("paper runs require acoustic.use_gpu_phy=true")
 
     store = ChannelTraceStore(Path(cfg.paths.traces))
     engine = BellhopEngine(
@@ -95,12 +93,58 @@ def ensure_trace(cfg: DictConfig, world_positions: dict[str, Position3D]) -> Any
     times = list(np.arange(0.0, duration + 1e-9, dt))
     from cgea.acoustic.trace import make_trace_id
 
-    trace_id = make_trace_id(engine.env.environment_id, int(cfg.seed), len(world_positions), duration)
+    base_id = make_trace_id(engine.env.environment_id, int(cfg.seed), len(world_positions), duration)
+    trace_id = f"{base_id}_gpu" if use_gpu_phy else base_id
     meta_path = store.meta_path(trace_id)
     if meta_path.exists() and not bool(cfg.get("force_regenerate_trace", False)):
+        meta = store.load_meta(trace_id)
         if paper_run:
-            assert_trace_paper_meta(store.load_meta(trace_id))
+            assert_trace_paper_meta(meta, require_gpu_phy=use_gpu_phy)
+        if use_gpu_phy and not meta.get("gpu_phy"):
+            raise PaperAssertionError(f"refusing to load non-GPU trace {trace_id} under use_gpu_phy")
+        if (not use_gpu_phy) and meta.get("gpu_phy"):
+            raise PaperAssertionError(f"refusing to load GPU-PHY trace {trace_id} under legacy channel path")
         return store.load(trace_id)
+
+    if use_gpu_phy:
+        from cgea.acoustic.gpu_pipeline import generate_mission_trace_gpu
+        from cgea.phy.config import PAPER_PHY
+
+        phy = PAPER_PHY.model_copy(
+            update={
+                "bandwidth_hz": float(cfg.acoustic.bandwidth_hz),
+                "snr_threshold_db": float(cfg.acoustic.get("snr_threshold_db", 12.0)),
+            }
+        )
+        trace, gpu_meta, _lut = generate_mission_trace_gpu(
+            engine,
+            world_positions,
+            times,
+            seed=int(cfg.seed),
+            noise_psd_dbm_hz=float(cfg.acoustic.noise_psd_dbm_hz),
+            bandwidth_hz=float(cfg.acoustic.bandwidth_hz),
+            tx_power_dbm=float(cfg.acoustic.tx_power_dbm),
+            phy=phy,
+            repo_root=Path(cfg.paths.root),
+        )
+        trace.trace_id = trace_id
+        extra = {
+            "backend": "aubellhop" if paper_run else engine.backend,
+            "allow_fallback": bool(cfg.acoustic.get("allow_fallback", False)),
+            "use_sionna_bridge": True,
+            "sionna_device": gpu_meta.get("cuda_device") or gpu_meta.get("device"),
+            "gpu_phy": True,
+            "doppler_mode": "not_modeled",
+            "trace_family": "gpu_phy",
+            "git_commit": git_commit(Path(cfg.paths.root)),
+            "n_nodes": len(world_positions),
+            "duration_s": duration,
+            **{k: v for k, v in gpu_meta.items() if k != "lut"},
+        }
+        store.save(trace, extra_meta=extra)
+        if paper_run:
+            assert_trace_paper_meta(store.load_meta(trace_id), require_gpu_phy=True)
+        return trace
 
     sionna_device = "cpu"
     if paper_run:
@@ -143,13 +187,16 @@ def ensure_trace(cfg: DictConfig, world_positions: dict[str, Position3D]) -> Any
             "allow_fallback": bool(cfg.acoustic.get("allow_fallback", False)),
             "use_sionna_bridge": bool(cfg.acoustic.get("use_sionna_bridge", paper_run)),
             "sionna_device": sionna_device,
+            "gpu_phy": False,
+            "doppler_mode": "not_modeled",
+            "trace_family": "legacy_sionna_wrap",
             "git_commit": git_commit(Path(cfg.paths.root)),
             "n_nodes": len(world_positions),
             "duration_s": duration,
         },
     )
     if paper_run:
-        assert_trace_paper_meta(store.load_meta(trace_id))
+        assert_trace_paper_meta(store.load_meta(trace_id), require_gpu_phy=False)
     return trace
 
 
@@ -177,7 +224,10 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     trace = ensure_trace(cfg, positions)
     store = ChannelTraceStore(Path(cfg.paths.traces))
     if paper_run:
-        assert_trace_paper_meta(store.load_meta(trace.trace_id))
+        assert_trace_paper_meta(
+            store.load_meta(trace.trace_id),
+            require_gpu_phy=bool(cfg.acoustic.get("use_gpu_phy", True)),
+        )
 
     env = simpy.Environment()
     node_ids = list(world.auvs.keys())
@@ -260,7 +310,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     duration = float(cfg.mission.duration_s)
 
     def mission_loop():
-        nonlocal governance_bytes, decisions_allow, decisions_deny, decisions_defer
+        nonlocal decisions_allow, decisions_deny, decisions_defer
         nonlocal consequential_proposed, consequential_allowed, high_risk_action_count
         nonlocal false_denials, denied_consequential, useful_cons_allowed, useful_cons_proposed
         nonlocal recovering, recon_done, recon_latency, conflict_count
@@ -331,7 +381,6 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                             created_at=env.now,
                         )
                         net.send(pkt)
-                        governance_bytes += pkt.size_bytes
 
                 part_size = next((len(p) for p in parts if aid in p), 1)
                 recent = [d for d in net.deliveries if d.packet.src == aid or d.packet.dst == aid][-20:]
@@ -463,10 +512,9 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     env.process(mission_loop())
     env.run(until=duration)
 
-    total_bytes = net.total_bytes()["total"] + governance_bytes
-    for d in net.deliveries:
-        if d.packet.ptype in GOVERNANCE_PACKET_TYPES:
-            governance_bytes += d.packet.size_bytes
+    acc = net.total_bytes()
+    governance_bytes = int(acc["governance_tx"])
+    total_bytes = int(acc["tx"])
 
     unauth_rate = high_risk_action_count / max(consequential_proposed, 1)
     false_denial_rate = false_denials / max(denied_consequential, 1)
@@ -517,7 +565,13 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         energy_compute_j=energy_k,
         provenance=prov,
         extra={
-            "outage_duration_s": outage_duration_s,
+            "gco_convention": "governance_TX_bytes / total_TX_bytes",
+            "tx_bytes": int(acc["tx"]),
+            "rx_bytes": int(acc["rx"]),
+            "governance_tx_bytes": int(acc["governance_tx"]),
+            "doppler_mode": str(cfg.acoustic.get("doppler_mode", "not_modeled")),
+            "gpu_phy": bool(cfg.acoustic.get("use_gpu_phy", paper_run)),
+            "trace_family": "gpu_phy" if bool(cfg.acoustic.get("use_gpu_phy", paper_run)) else "legacy_sionna_wrap",
             "outage_start_s": outage_start if outage_start < 1e17 else None,
             "outage_end_s": outage_end if outage_end < 1e17 else None,
             "high_risk_action_count": high_risk_action_count,

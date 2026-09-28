@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """E1-v2 pilot: frozen CGEA policies, strengthened mission workload.
 
+Default campaign name is e1_pilot_v2_gpu (GPU-PHY traces, paper-result candidate).
+The running/legacy folder results/e1_pilot_v2 is workload validation on the old
+Sionna-wrap traces — do not mix the two families.
+
 n=3 seeds. Outages cover frozen freshness bands. Do not start 10-seed production.
 Do not retune aging/stale/hard expiry, capsules, or B5 variants.
 """
@@ -9,6 +13,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -37,7 +42,7 @@ OUTAGES = {
     "1000": {"outage_disabled": False, "outage_start_s": 200.0, "outage_end_s": 1200.0, "duration_s": 1000.0},
 }
 OUTAGE_ORDER = ["0", "150", "300", "500", "750", "1000"]
-CAMPAIGN = "e1_pilot_v2"
+CAMPAIGN = os.environ.get("CGEA_CAMPAIGN", "e1_pilot_v2_gpu")
 REQUIRED_CLASSES = [
     "enter_exclusion_zone",
     "reassign_another_auv",

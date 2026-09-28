@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import enum
+import hashlib
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Any, Callable
@@ -21,6 +22,21 @@ class PacketType(str, enum.Enum):
     DIGEST = "digest"
     PROVENANCE = "provenance"
     RECONCILE = "reconcile"
+
+
+GOVERNANCE_TX_TYPES = {
+    PacketType.AUTHORITY,
+    PacketType.DIGEST,
+    PacketType.PROVENANCE,
+    PacketType.RECONCILE,
+    PacketType.SUPERVISOR,
+}
+
+
+def stable_bernoulli(packet_id: str) -> float:
+    """Process-stable U[0,1) from packet_id. Not Python's salted hash()."""
+    digest = hashlib.sha256(packet_id.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") / 2**64
 
 
 class Packet(CgeaBaseModel):
@@ -81,6 +97,7 @@ class UnderwaterNetwork:
         self.nodes = {n: NodeCommState(node_id=n) for n in node_ids}
         self.inbox: dict[str, list[Packet]] = defaultdict(list)
         self.deliveries: list[DeliveryRecord] = []
+        self.bytes_tx_by_ptype: dict[str, int] = defaultdict(int)
         self._handlers: dict[str, Callable[[Packet], None]] = {}
         self._forced_partition_groups: list[set[str]] | None = None
 
@@ -167,18 +184,13 @@ class UnderwaterNetwork:
 
         src_state.bytes_tx += packet.size_bytes
         src_state.packets_tx += 1
+        self.bytes_tx_by_ptype[packet.ptype.value] += packet.size_bytes
 
         # Propagation
         yield self.env.timeout(sample.propagation_delay_s)
 
-        # Packet loss
-        import random
-
-        # Deterministic loss from packet_id hash + psp (reproducible given seed set externally)
         psp = sample.packet_success_probability
-        # Use hash of packet_id for deterministic Bernoulli
-        h = abs(hash(packet.packet_id)) % 10_000 / 10_000.0
-        success = h < psp
+        success = stable_bernoulli(packet.packet_id) < psp
         if not success:
             src_state.packets_dropped += 1
             self.deliveries.append(
@@ -220,4 +232,11 @@ class UnderwaterNetwork:
     def total_bytes(self) -> dict[str, int]:
         tx = sum(n.bytes_tx for n in self.nodes.values())
         rx = sum(n.bytes_rx for n in self.nodes.values())
-        return {"tx": tx, "rx": rx, "total": tx + rx}
+        gov_tx = sum(self.bytes_tx_by_ptype.get(t.value, 0) for t in GOVERNANCE_TX_TYPES)
+        return {
+            "tx": tx,
+            "rx": rx,
+            "total": tx,
+            "governance_tx": gov_tx,
+            "data_tx": tx - gov_tx,
+        }

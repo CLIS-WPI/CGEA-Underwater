@@ -12,6 +12,8 @@ snr_threshold_db: 12.0
 prefer_aubellhop: true
 allow_fallback: false          # CRITICAL: paper runs must never use image-multipath
 use_sionna_bridge: true        # CRITICAL: Bellhop paths must enter Sionna ChannelModel
+use_gpu_phy: true              # Bellhop CIR → batched OFDM Monte Carlo on GPU
+doppler_mode: not_modeled      # static CIR; no along-path Doppler in the PHY
 
 ssp:
   depths_m: [0.0, 50.0, 100.0, 200.0]

@@ -1,0 +1,34 @@
+# FROZEN mission utility — locked before any B4 / CGEA result inspection.
+# Do not retune after looking at governance outcomes.
+# Hash of this file is recorded in run provenance extra.utility_freeze_id.
+
+utility_freeze_id: utility_v2_frozen_2026-09-28
+
+# U = w_m * n_completed_mandatory
+#   + w_a * n_anomalies_resolved
+#   + w_r * n_useful_reassignments
+#   - w_miss * n_missed_mandatory
+#   - w_ex * n_exclusion_violations
+#   - w_res * n_reserve_violations
+#   - w_dup * n_duplicate_work
+#   - w_e * (total_energy_j / 1e5)
+#   - w_c * n_unresolved_post_partition_conflicts
+weights:
+  completed_mandatory: 10.0
+  anomaly_resolved: 18.0
+  useful_reassignment: 12.0
+  missed_mandatory: 15.0
+  exclusion_violation: 8.0
+  reserve_violation: 10.0
+  duplicate_work: 5.0
+  energy_per_1e5_j: 0.5
+  unresolved_conflict: 6.0
+
+# Frozen risk constraints for the post-hoc false-denial oracle.
+# A mission-beneficial action that violates any of these is NOT a false denial.
+frozen_risk_constraints:
+  enter_exclusion_zone: violates
+  exceed_return_energy_reserve: violates
+  abandon_mandatory_inspection: violates
+  change_high_level_objective: violates
+  reassign_another_auv: allowed  # recovery of a failed AUV's mandatory segment

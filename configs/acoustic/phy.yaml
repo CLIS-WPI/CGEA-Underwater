@@ -1,6 +1,9 @@
 # Acoustic OFDM PHY abstraction applied to Bellhop CIRs.
 # Not a claim that Sionna implements underwater acoustics natively.
-# Does not change CGEA governance thresholds.
+# Doppler is NOT modeled: CIR is static (multipath + attenuation + delay).
+# Doppler sensitivity is a documented limitation for underwater reviewers.
+freeze_id: acoustic_ofdm_phy_v1_2026-09-28
+doppler_mode: not_modeled
 freeze_id: acoustic_ofdm_phy_v1_2026-09-28
 modulation: qpsk
 coding_rate: 0.5

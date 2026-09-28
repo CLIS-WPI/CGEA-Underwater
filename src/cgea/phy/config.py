@@ -28,6 +28,7 @@ class PhyConfig(CgeaBaseModel):
     n_packet_realizations: int = 4
     precision: str = "complex64"  # complex64 | complex128
     snr_threshold_db: float = 12.0
+    doppler_mode: str = "not_modeled"
 
     def phy_config_hash(self) -> str:
         raw = json.dumps(self.model_dump(), sort_keys=True)
