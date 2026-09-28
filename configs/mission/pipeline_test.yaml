@@ -1,0 +1,10 @@
+# Short mission for unit / integration tests
+mission_id: pipeline_test
+n_auvs: 4
+pipeline_length_m: 800.0
+depth_m: 80.0
+battery_j: 1000000.0
+reserve_j: 100000.0
+duration_s: 120.0
+sim_tick_s: 10.0
+channel_sample_dt_s: 60.0

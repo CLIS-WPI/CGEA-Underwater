@@ -1,0 +1,35 @@
+# Default Hydra config — every experimental parameter lives here (not hard-coded).
+
+defaults:
+  - acoustic: default
+  - mission: pipeline
+  - governance: cgea
+  - experiment: smoke
+  - _self_
+
+seed: 0
+
+paths:
+  root: ${oc.env:CGEA_ROOT,.}
+  traces: ${paths.root}/traces
+  results: ${paths.root}/results
+
+network:
+  queue_limit: 32
+  header_bytes: 32
+
+agent:
+  consequential_period_s: 120.0
+
+scenario:
+  outage_start_s: 200.0
+  outage_end_s: 500.0
+  partition_groups: null
+
+force_regenerate_trace: false
+
+hydra:
+  run:
+    dir: results/hydra/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: false

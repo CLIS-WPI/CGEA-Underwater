@@ -1,0 +1,20 @@
+services:
+  cgea:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: cgea-underwater:latest
+    container_name: cgea-underwater
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CGEA_ROOT=/workspace/cgea-underwater
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-1}
+    volumes:
+      - ..:/workspace/cgea-underwater
+    working_dir: /workspace/cgea-underwater
+    shm_size: "16gb"
+    stdin_open: true
+    tty: true
+    command: bash

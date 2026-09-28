@@ -1,0 +1,7 @@
+name: e5_governance_overhead
+baselines: [B4]
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+description: E5 — governance overhead vs n_AUVs, refresh rate, digest size
+
+# Sweep externally:
+# cgea-run experiment=e5_governance_overhead mission.n_auvs=6,12,18 governance.authority_refresh_s=30,60,120

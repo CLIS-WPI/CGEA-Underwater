@@ -1,0 +1,17 @@
+soft_expiry_s: 300.0
+hard_expiry_s: 900.0
+authority_refresh_s: 60.0
+authority_capsule_bytes: 256
+freshness_mode: continuous  # continuous | binary | disabled
+immediate_resume: false
+
+freshness:
+  aging_age_s: 180.0
+  stale_age_s: 400.0
+
+connectivity:
+  pdr_degraded: 0.7
+  pdr_partition: 0.3
+  supervisor_timeout_s: 120.0
+  authority_timeout_s: 300.0
+  min_throughput_bps: 100.0

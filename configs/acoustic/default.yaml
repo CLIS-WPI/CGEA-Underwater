@@ -1,0 +1,20 @@
+environment_id: default_ssp_200m
+water_depth_m: 200.0
+carrier_frequency_hz: 25000.0
+bandwidth_hz: 5000.0
+noise_psd_dbm_hz: -80.0
+tx_power_dbm: 180.0
+prefer_aubellhop: true
+
+ssp:
+  depths_m: [0.0, 50.0, 100.0, 200.0]
+  speeds_mps: [1520.0, 1510.0, 1505.0, 1515.0]
+
+bottom:
+  soundspeed_mps: 1600.0
+  density_ratio: 1.5
+  attenuation_db_per_wavelength: 0.5
+
+surface:
+  boundary: vacuum
+  roughness_m: 0.0

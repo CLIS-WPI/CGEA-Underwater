@@ -1,0 +1,4 @@
+name: smoke
+baselines: [B1, B2, B3, B4, B5]
+seeds: [0, 1]
+description: Fast smoke run for CI / Docker verification

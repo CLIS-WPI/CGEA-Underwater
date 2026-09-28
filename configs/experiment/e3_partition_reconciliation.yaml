@@ -1,0 +1,13 @@
+name: e3_partition_reconciliation
+baselines: [B1, B4, B5]
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+description: E3 — Immediate Resume vs Reconnect→Reconcile→Reauthorize→Resume
+
+scenario:
+  outage_start_s: 150.0
+  outage_end_s: 450.0
+  partition_groups:
+    - [gw0, auv_00, auv_01, auv_02, auv_03, auv_04, auv_05]
+    - [auv_06, auv_07, auv_08, auv_09, auv_10, auv_11]
+
+# Compare with governance.immediate_resume=true,false

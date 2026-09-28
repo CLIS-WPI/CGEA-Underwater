@@ -1,0 +1,8 @@
+name: e4_cgea_vs_adaptive
+baselines: [B4, B5]
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+description: E4 — critical novelty — B4 CGEA vs B5 connectivity-aware adaptive autonomy
+
+scenario:
+  outage_start_s: 200.0
+  outage_end_s: 600.0

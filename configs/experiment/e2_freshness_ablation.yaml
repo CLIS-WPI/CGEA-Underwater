@@ -1,0 +1,7 @@
+name: e2_freshness_ablation
+baselines: [B4]
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+description: E2 — continuous vs binary vs disabled freshness
+
+# Run with:
+# cgea-run experiment=e2_freshness_ablation governance.freshness_mode=continuous,binary,disabled
