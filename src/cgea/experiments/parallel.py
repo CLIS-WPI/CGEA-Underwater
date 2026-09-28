@@ -9,7 +9,7 @@ import json
 import os
 import threading
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import get_context
 from pathlib import Path
 from typing import Any, Callable, Iterable
@@ -19,14 +19,29 @@ from omegaconf import OmegaConf
 from cgea.experiments.runner import run_single
 from cgea.metrics import RunMetrics
 
-DEFAULT_WORKERS = 16
+DEFAULT_WORKERS = 16  # initial fallback only; production default is set after 1/4/8/16/24 bench
 BENCH_WORKER_COUNTS = (1, 4, 8, 16, 24)
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
+def logical_cpu_count() -> int:
+    """Return logical CPUs (hardware threads).
+
+    `os.cpu_count()` is not physical core count. On SMT/EPYC this can be 2× cores.
+    Worker caps use this value to avoid oversubscribing *schedulable* processors,
+    not as a physical-core oracle.
+    """
+    return int(os.cpu_count() or 1)
+
+
 def resolve_simpy_workers(cpu_count: int | None = None, requested: int | None = None) -> int:
-    """Default 16; cap at physical CPUs to avoid oversubscription. Env wins."""
-    ncpu = int(cpu_count or os.cpu_count() or 1)
+    """Choose worker count; never exceed logical CPUs. Env and bench file win.
+
+    Production default is `results/simpy_parallel_default.json`, written only after
+    the 1/4/8/16/24 worker benchmark. Until that file exists, fall back to 16
+    (capped by logical CPU count) or `CGEA_SIMPY_WORKERS`.
+    """
+    ncpu = int(cpu_count if cpu_count is not None else logical_cpu_count())
     env = os.environ.get("CGEA_SIMPY_WORKERS")
     if env is not None and env.strip() != "":
         return max(1, min(int(env), ncpu))
@@ -105,12 +120,16 @@ def run_simpy_jobs(
         mp_context=ctx,
         initializer=_init_simpy_worker,
     ) as pool:
-        futures = [pool.submit(execute_simpy_job, job) for job in jobs]
-        for i, fut in enumerate(futures):
+        future_to_index = {pool.submit(execute_simpy_job, job): i for i, job in enumerate(jobs)}
+        for fut in as_completed(future_to_index):
+            i = future_to_index[fut]
             payload = fut.result()
             results[i] = payload
             if on_complete:
                 on_complete(i, payload)
+    missing = [i for i, r in enumerate(results) if r is None]
+    if missing:
+        raise RuntimeError(f"SimPy pool returned no result for job indices {missing}")
     return [r for r in results if r is not None]
 
 
@@ -159,12 +178,11 @@ class CpuSampler:
 
 
 def pick_stable_workers(rows: Iterable[dict[str, Any]], cpu_count: int) -> int:
-    """Lowest wall time among counts that do not oversubscribe; prefer higher efficiency if tied."""
+    """Pick workers after the 1/4/8/16/24 bench. `cpu_count` is logical CPUs."""
     eligible = [r for r in rows if int(r["workers"]) <= cpu_count]
     if not eligible:
         return min(DEFAULT_WORKERS, cpu_count)
     best_wall = min(float(r["wall_s"]) for r in eligible)
-    # Treat within 5% of best wall as ties; pick highest efficiency then fewest workers.
     close = [r for r in eligible if float(r["wall_s"]) <= best_wall * 1.05]
     close.sort(key=lambda r: (-float(r["efficiency"]), int(r["workers"])))
     return int(close[0]["workers"])

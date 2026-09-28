@@ -31,6 +31,7 @@ from run_e1_pilot_v2 import (  # noqa: E402
 from cgea.experiments.parallel import (  # noqa: E402
     BENCH_WORKER_COUNTS,
     CpuSampler,
+    logical_cpu_count,
     pick_stable_workers,
     run_simpy_jobs,
 )
@@ -63,7 +64,11 @@ def main() -> None:
     jobs = _subset_jobs(all_jobs, max_jobs)
     print(f"[bench] {len(jobs)} SimPy jobs (full campaign would be {len(all_jobs)})", flush=True)
 
-    ncpu = os.cpu_count() or 1
+    ncpu = logical_cpu_count()
+    print(
+        f"[bench] logical_cpus={ncpu} (os.cpu_count(); not necessarily physical cores)",
+        flush=True,
+    )
     rows = []
     baseline_wall = None
     for workers in BENCH_WORKER_COUNTS:
@@ -90,7 +95,8 @@ def main() -> None:
             "cpu_busy_fraction": cpu,
             "speedup_vs_1": speedup,
             "efficiency": efficiency,
-            "ncpu": ncpu,
+            "logical_cpu_count": ncpu,
+            "cpu_count_note": "os.cpu_count() returns logical CPUs (hardware threads), not physical cores",
             "pids": sorted({int(p["pid"]) for p in payloads}),
             "campaign_wall_estimate_s": wall * (len(all_jobs) / len(jobs)),
         }
@@ -112,6 +118,9 @@ def main() -> None:
         "seeds": list(SEEDS),
         "rows": rows,
         "chosen_workers": chosen,
+        "logical_cpu_count": ncpu,
+        "cpu_count_note": "os.cpu_count() returns logical CPUs (hardware threads), not physical cores",
+        "production_default": "written only after this 1/4/8/16/24 sweep",
         "note": (
             "PHY is not in this loop. Traces are loaded from parquet. "
             "campaign_wall_estimate_s scales this job subset to 126 full-campaign jobs."

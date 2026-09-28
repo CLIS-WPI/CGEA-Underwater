@@ -1,0 +1,168 @@
+{
+  "trace_ids": {
+    "0": "tr_54fb653caded_gpu",
+    "1": "tr_3bf719402f6c_gpu",
+    "2": "tr_0ab8a47a1225_gpu"
+  },
+  "n_jobs_benchmarked": 21,
+  "n_jobs_full_campaign": 126,
+  "outages": [
+    "0",
+    "150",
+    "300",
+    "500",
+    "750",
+    "1000"
+  ],
+  "baselines": [
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5_conservative",
+    "B5_nominal",
+    "B5_permissive"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "rows": [
+    {
+      "workers": 1,
+      "n_jobs": 21,
+      "wall_s": 368.67438791971654,
+      "mean_per_run_s": 17.555715775605115,
+      "min_per_run_s": 14.356749192811549,
+      "max_per_run_s": 21.06576973106712,
+      "cpu_busy_fraction": 0.10974178131495159,
+      "speedup_vs_1": 1.0,
+      "efficiency": 1.0,
+      "logical_cpu_count": 64,
+      "cpu_count_note": "os.cpu_count() returns logical CPUs (hardware threads), not physical cores",
+      "pids": [
+        1
+      ],
+      "campaign_wall_estimate_s": 2212.046327518299
+    },
+    {
+      "workers": 4,
+      "n_jobs": 21,
+      "wall_s": 93.85949166491628,
+      "mean_per_run_s": 15.495948332672318,
+      "min_per_run_s": 14.335129721090198,
+      "max_per_run_s": 16.409079211764038,
+      "cpu_busy_fraction": 0.1552360384627879,
+      "speedup_vs_1": 3.927939320574046,
+      "efficiency": 0.9819848301435115,
+      "logical_cpu_count": 64,
+      "cpu_count_note": "os.cpu_count() returns logical CPUs (hardware threads), not physical cores",
+      "pids": [
+        158,
+        161,
+        162,
+        163
+      ],
+      "campaign_wall_estimate_s": 563.1569499894977
+    },
+    {
+      "workers": 8,
+      "n_jobs": 21,
+      "wall_s": 48.12465203180909,
+      "mean_per_run_s": 15.29795210551293,
+      "min_per_run_s": 14.331772154197097,
+      "max_per_run_s": 16.6783778835088,
+      "cpu_busy_fraction": 0.2083847366346895,
+      "speedup_vs_1": 7.660821893860817,
+      "efficiency": 0.9576027367326021,
+      "logical_cpu_count": 64,
+      "cpu_count_note": "os.cpu_count() returns logical CPUs (hardware threads), not physical cores",
+      "pids": [
+        450,
+        453,
+        454,
+        455,
+        456,
+        457,
+        458,
+        459
+      ],
+      "campaign_wall_estimate_s": 288.74791219085455
+    },
+    {
+      "workers": 16,
+      "n_jobs": 21,
+      "wall_s": 33.48230649437755,
+      "mean_per_run_s": 15.32612035667435,
+      "min_per_run_s": 14.504238111898303,
+      "max_per_run_s": 16.27848759200424,
+      "cpu_busy_fraction": 0.2691298638143434,
+      "speedup_vs_1": 11.011021238385277,
+      "efficiency": 0.6881888273990798,
+      "logical_cpu_count": 64,
+      "cpu_count_note": "os.cpu_count() returns logical CPUs (hardware threads), not physical cores",
+      "pids": [
+        1010,
+        1013,
+        1014,
+        1015,
+        1016,
+        1017,
+        1018,
+        1019,
+        1020,
+        1021,
+        1022,
+        1023,
+        1024,
+        1025,
+        1026,
+        1027
+      ],
+      "campaign_wall_estimate_s": 200.89383896626532
+    },
+    {
+      "workers": 24,
+      "n_jobs": 21,
+      "wall_s": 19.8603199403733,
+      "mean_per_run_s": 15.153091327021164,
+      "min_per_run_s": 14.535129991360009,
+      "max_per_run_s": 17.080718253739178,
+      "cpu_busy_fraction": 0.4020242923458193,
+      "speedup_vs_1": 18.563365999469735,
+      "efficiency": 0.7734735833112389,
+      "logical_cpu_count": 64,
+      "cpu_count_note": "os.cpu_count() returns logical CPUs (hardware threads), not physical cores",
+      "pids": [
+        2106,
+        2109,
+        2110,
+        2111,
+        2112,
+        2113,
+        2114,
+        2115,
+        2116,
+        2117,
+        2118,
+        2119,
+        2120,
+        2121,
+        2122,
+        2123,
+        2124,
+        2125,
+        2126,
+        2127,
+        2128
+      ],
+      "campaign_wall_estimate_s": 119.16191964223981
+    }
+  ],
+  "chosen_workers": 24,
+  "logical_cpu_count": 64,
+  "cpu_count_note": "os.cpu_count() returns logical CPUs (hardware threads), not physical cores",
+  "production_default": "written only after this 1/4/8/16/24 sweep",
+  "note": "PHY is not in this loop. Traces are loaded from parquet. campaign_wall_estimate_s scales this job subset to 126 full-campaign jobs."
+}

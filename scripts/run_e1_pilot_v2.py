@@ -232,7 +232,7 @@ def run_campaign(cfg, trace_ids: dict[int, str], max_workers: int | None = None)
 
 
 def write_tables(rows: list[dict], out_dir: Path) -> None:
-    csv_path = out_dir / "e1_pilot_v2_raw.csv"
+    csv_path = out_dir / f"{CAMPAIGN}_raw.csv"
     fields = list(rows[0].keys())
     with csv_path.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -258,8 +258,8 @@ def write_tables(rows: list[dict], out_dir: Path) -> None:
         summary[f"{b}|{o}"]["n"] = len(rs)
         summary[f"{b}|{o}"]["note"] = "pilot n=3; CI is indicative only"
 
-    (out_dir / "e1_pilot_v2_summary.json").write_text(json.dumps(summary, indent=2))
-    (out_dir / "e1_pilot_v2_raw.json").write_text(json.dumps(rows, indent=2))
+    (out_dir / f"{CAMPAIGN}_summary.json").write_text(json.dumps(summary, indent=2))
+    (out_dir / f"{CAMPAIGN}_raw.json").write_text(json.dumps(rows, indent=2))
 
 
 def write_coverage_table(rows: list[dict], out_dir: Path) -> dict:

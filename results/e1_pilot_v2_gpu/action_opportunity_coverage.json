@@ -1,0 +1,360 @@
+{
+  "required_classes": [
+    "enter_exclusion_zone",
+    "reassign_another_auv",
+    "exceed_return_energy_reserve",
+    "abandon_mandatory_inspection"
+  ],
+  "campaign_exercised": [
+    "abandon_mandatory_inspection",
+    "change_high_level_objective",
+    "enter_exclusion_zone",
+    "exceed_return_energy_reserve",
+    "reassign_another_auv"
+  ],
+  "campaign_valid": true,
+  "invalid_conditions": [],
+  "by_outage": [
+    {
+      "outage": "0",
+      "outage_duration_s": 0.0,
+      "valid": true,
+      "exercised_classes": [
+        "abandon_mandatory_inspection",
+        "reassign_another_auv",
+        "exceed_return_energy_reserve",
+        "enter_exclusion_zone"
+      ],
+      "by_class": {
+        "abandon_mandatory_inspection": {
+          "proposed": 1344,
+          "ALLOW": 960,
+          "DENY": 192,
+          "DEFER": 192
+        },
+        "reassign_another_auv": {
+          "proposed": 435,
+          "ALLOW": 15,
+          "DENY": 210,
+          "DEFER": 210
+        },
+        "exceed_return_energy_reserve": {
+          "proposed": 465,
+          "ALLOW": 45,
+          "DENY": 210,
+          "DEFER": 210
+        },
+        "enter_exclusion_zone": {
+          "proposed": 870,
+          "ALLOW": 30,
+          "DENY": 420,
+          "DEFER": 420
+        },
+        "change_high_level_objective": {
+          "proposed": 0,
+          "ALLOW": 0,
+          "DENY": 0,
+          "DEFER": 0
+        }
+      },
+      "consequential_by_connectivity": {
+        "CONNECTED": 0,
+        "DEGRADED": 3114,
+        "PARTITIONED": 0,
+        "ISOLATED": 0,
+        "RECOVERING": 0
+      },
+      "consequential_by_freshness": {
+        "fresh": 3114,
+        "aging": 0,
+        "stale": 0,
+        "hard_expired": 0
+      }
+    },
+    {
+      "outage": "150",
+      "outage_duration_s": 150.0,
+      "valid": true,
+      "exercised_classes": [
+        "abandon_mandatory_inspection",
+        "reassign_another_auv",
+        "exceed_return_energy_reserve",
+        "enter_exclusion_zone",
+        "change_high_level_objective"
+      ],
+      "by_class": {
+        "abandon_mandatory_inspection": {
+          "proposed": 1320,
+          "ALLOW": 936,
+          "DENY": 216,
+          "DEFER": 168
+        },
+        "reassign_another_auv": {
+          "proposed": 435,
+          "ALLOW": 15,
+          "DENY": 234,
+          "DEFER": 186
+        },
+        "exceed_return_energy_reserve": {
+          "proposed": 465,
+          "ALLOW": 45,
+          "DENY": 234,
+          "DEFER": 186
+        },
+        "enter_exclusion_zone": {
+          "proposed": 870,
+          "ALLOW": 30,
+          "DENY": 468,
+          "DEFER": 372
+        },
+        "change_high_level_objective": {
+          "proposed": 21,
+          "ALLOW": 12,
+          "DENY": 9,
+          "DEFER": 0
+        }
+      },
+      "consequential_by_connectivity": {
+        "CONNECTED": 0,
+        "DEGRADED": 2730,
+        "PARTITIONED": 381,
+        "ISOLATED": 0,
+        "RECOVERING": 0
+      },
+      "consequential_by_freshness": {
+        "fresh": 3087,
+        "aging": 24,
+        "stale": 0,
+        "hard_expired": 0
+      }
+    },
+    {
+      "outage": "300",
+      "outage_duration_s": 300.0,
+      "valid": true,
+      "exercised_classes": [
+        "abandon_mandatory_inspection",
+        "reassign_another_auv",
+        "exceed_return_energy_reserve",
+        "enter_exclusion_zone",
+        "change_high_level_objective"
+      ],
+      "by_class": {
+        "abandon_mandatory_inspection": {
+          "proposed": 1311,
+          "ALLOW": 927,
+          "DENY": 237,
+          "DEFER": 147
+        },
+        "reassign_another_auv": {
+          "proposed": 435,
+          "ALLOW": 15,
+          "DENY": 255,
+          "DEFER": 165
+        },
+        "exceed_return_energy_reserve": {
+          "proposed": 465,
+          "ALLOW": 45,
+          "DENY": 255,
+          "DEFER": 165
+        },
+        "enter_exclusion_zone": {
+          "proposed": 870,
+          "ALLOW": 30,
+          "DENY": 510,
+          "DEFER": 330
+        },
+        "change_high_level_objective": {
+          "proposed": 39,
+          "ALLOW": 12,
+          "DENY": 27,
+          "DEFER": 0
+        }
+      },
+      "consequential_by_connectivity": {
+        "CONNECTED": 0,
+        "DEGRADED": 2406,
+        "PARTITIONED": 714,
+        "ISOLATED": 0,
+        "RECOVERING": 0
+      },
+      "consequential_by_freshness": {
+        "fresh": 2910,
+        "aging": 210,
+        "stale": 0,
+        "hard_expired": 0
+      }
+    },
+    {
+      "outage": "500",
+      "outage_duration_s": 500.0,
+      "valid": true,
+      "exercised_classes": [
+        "abandon_mandatory_inspection",
+        "reassign_another_auv",
+        "exceed_return_energy_reserve",
+        "enter_exclusion_zone",
+        "change_high_level_objective"
+      ],
+      "by_class": {
+        "abandon_mandatory_inspection": {
+          "proposed": 1299,
+          "ALLOW": 915,
+          "DENY": 267,
+          "DEFER": 117
+        },
+        "reassign_another_auv": {
+          "proposed": 435,
+          "ALLOW": 15,
+          "DENY": 285,
+          "DEFER": 135
+        },
+        "exceed_return_energy_reserve": {
+          "proposed": 465,
+          "ALLOW": 45,
+          "DENY": 285,
+          "DEFER": 135
+        },
+        "enter_exclusion_zone": {
+          "proposed": 870,
+          "ALLOW": 30,
+          "DENY": 570,
+          "DEFER": 270
+        },
+        "change_high_level_objective": {
+          "proposed": 57,
+          "ALLOW": 12,
+          "DENY": 45,
+          "DEFER": 0
+        }
+      },
+      "consequential_by_connectivity": {
+        "CONNECTED": 0,
+        "DEGRADED": 1944,
+        "PARTITIONED": 1182,
+        "ISOLATED": 0,
+        "RECOVERING": 0
+      },
+      "consequential_by_freshness": {
+        "fresh": 2658,
+        "aging": 282,
+        "stale": 186,
+        "hard_expired": 0
+      }
+    },
+    {
+      "outage": "750",
+      "outage_duration_s": 750.0,
+      "valid": true,
+      "exercised_classes": [
+        "abandon_mandatory_inspection",
+        "reassign_another_auv",
+        "exceed_return_energy_reserve",
+        "enter_exclusion_zone",
+        "change_high_level_objective"
+      ],
+      "by_class": {
+        "abandon_mandatory_inspection": {
+          "proposed": 1284,
+          "ALLOW": 900,
+          "DENY": 306,
+          "DEFER": 78
+        },
+        "reassign_another_auv": {
+          "proposed": 435,
+          "ALLOW": 15,
+          "DENY": 324,
+          "DEFER": 96
+        },
+        "exceed_return_energy_reserve": {
+          "proposed": 465,
+          "ALLOW": 45,
+          "DENY": 324,
+          "DEFER": 96
+        },
+        "enter_exclusion_zone": {
+          "proposed": 870,
+          "ALLOW": 30,
+          "DENY": 648,
+          "DEFER": 192
+        },
+        "change_high_level_objective": {
+          "proposed": 84,
+          "ALLOW": 12,
+          "DENY": 72,
+          "DEFER": 0
+        }
+      },
+      "consequential_by_connectivity": {
+        "CONNECTED": 0,
+        "DEGRADED": 1344,
+        "PARTITIONED": 1794,
+        "ISOLATED": 0,
+        "RECOVERING": 0
+      },
+      "consequential_by_freshness": {
+        "fresh": 2331,
+        "aging": 282,
+        "stale": 525,
+        "hard_expired": 0
+      }
+    },
+    {
+      "outage": "1000",
+      "outage_duration_s": 1000.0,
+      "valid": true,
+      "exercised_classes": [
+        "abandon_mandatory_inspection",
+        "reassign_another_auv",
+        "exceed_return_energy_reserve",
+        "enter_exclusion_zone",
+        "change_high_level_objective"
+      ],
+      "by_class": {
+        "abandon_mandatory_inspection": {
+          "proposed": 1272,
+          "ALLOW": 888,
+          "DENY": 342,
+          "DEFER": 42
+        },
+        "reassign_another_auv": {
+          "proposed": 435,
+          "ALLOW": 15,
+          "DENY": 360,
+          "DEFER": 60
+        },
+        "exceed_return_energy_reserve": {
+          "proposed": 465,
+          "ALLOW": 45,
+          "DENY": 360,
+          "DEFER": 60
+        },
+        "enter_exclusion_zone": {
+          "proposed": 870,
+          "ALLOW": 30,
+          "DENY": 720,
+          "DEFER": 120
+        },
+        "change_high_level_objective": {
+          "proposed": 111,
+          "ALLOW": 12,
+          "DENY": 99,
+          "DEFER": 0
+        }
+      },
+      "consequential_by_connectivity": {
+        "CONNECTED": 0,
+        "DEGRADED": 792,
+        "PARTITIONED": 2361,
+        "ISOLATED": 0,
+        "RECOVERING": 0
+      },
+      "consequential_by_freshness": {
+        "fresh": 2031,
+        "aging": 282,
+        "stale": 663,
+        "hard_expired": 177
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "workers": 24,
+  "from": "/workspace/cgea-underwater/results/simpy_parallel_bench/simpy_parallel_bench.json"
+}
