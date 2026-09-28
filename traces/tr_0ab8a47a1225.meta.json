@@ -1,0 +1,14 @@
+{
+  "trace_id": "tr_0ab8a47a1225",
+  "environment_id": "paper_ssp_200m_v1",
+  "seed": 2,
+  "carrier_frequency_hz": 25000.0,
+  "num_samples": 3276,
+  "backend": "aubellhop",
+  "allow_fallback": false,
+  "use_sionna_bridge": true,
+  "sionna_device": "cuda:0",
+  "git_commit": "c4f070d587a80909a668eadc2871d100b7ac940f",
+  "n_nodes": 13,
+  "duration_s": 1400.0
+}

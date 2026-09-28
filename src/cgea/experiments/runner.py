@@ -16,6 +16,7 @@ from cgea.acoustic.trace import ChannelTraceStore, generate_mission_trace
 from cgea.agent import ExecutionAdapter, MissionPlanner
 from cgea.baselines import BaselineId, make_baseline
 from cgea.governance import (
+    AuthorityFreshness,
     ConnectivityClassifier,
     ConnectivityMetrics,
     ConnectivityState,
@@ -23,6 +24,8 @@ from cgea.governance import (
     FreshnessPolicy,
     GovernorDecision,
     NodeJournalEntry,
+    authority_age,
+    classify_freshness,
     issue_capsule,
     make_digest,
     reconcile_partitions,
@@ -35,7 +38,9 @@ from cgea.experiments.paper_gates import (
     assert_trace_paper_meta,
 )
 from cgea.metrics import RunMetrics, compute_overhead, save_metrics
-from cgea.mission import RiskClass, build_pipeline_mission
+from cgea.mission import CONSEQUENTIAL_ACTIONS, RiskClass, build_pipeline_mission
+from cgea.mission.oracle import oracle_label
+from cgea.mission.utility import UTILITY_FREEZE_ID, world_utility
 from cgea.network import Packet, PacketType, UnderwaterNetwork
 from cgea.types import Position3D, Provenance, config_hash, git_commit
 
@@ -166,6 +171,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         battery_j=float(cfg.mission.battery_j),
         reserve_j=float(cfg.mission.reserve_j),
         mission_id=str(cfg.mission.mission_id),
+        workload=str(cfg.mission.get("workload", "nominal")),
     )
     positions = {aid: a.position for aid, a in world.auvs.items()}
     trace = ensure_trace(cfg, positions)
@@ -220,8 +226,9 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     consequential_allowed = 0
     high_risk_action_count = 0
     false_denials = 0
-    useful_allowed = 0
-    useful_proposed = 0
+    denied_consequential = 0
+    useful_cons_allowed = 0
+    useful_cons_proposed = 0
     recovering = False
     recon_latency = 0.0
     conflict_count = 0
@@ -234,6 +241,20 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         "consequential": {"ALLOW": 0, "DENY": 0, "DEFER": 0},
     }
     connectivity_ticks: dict[str, int] = {s.value: 0 for s in ConnectivityState}
+    cons_classes = [a.value for a in CONSEQUENTIAL_ACTIONS]
+    coverage_by_class: dict[str, dict[str, int]] = {
+        c: {"proposed": 0, "ALLOW": 0, "DENY": 0, "DEFER": 0} for c in cons_classes
+    }
+    coverage_by_conn: dict[str, dict[str, int]] = {
+        s.value: {"proposed": 0, "ALLOW": 0, "DENY": 0, "DEFER": 0} for s in ConnectivityState
+    }
+    coverage_by_fresh: dict[str, dict[str, int]] = {
+        f.value: {"proposed": 0, "ALLOW": 0, "DENY": 0, "DEFER": 0} for f in AuthorityFreshness
+    }
+    denied_consequential_log: list[dict[str, Any]] = []
+    timeline_auv = str(cfg.mission.get("timeline_auv_id", "auv_08"))
+    authority_timeline: list[dict[str, Any]] = []
+    freshness_policy = controller.governor.freshness_policy
 
     tick = float(cfg.mission.sim_tick_s)
     duration = float(cfg.mission.duration_s)
@@ -241,8 +262,8 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     def mission_loop():
         nonlocal governance_bytes, decisions_allow, decisions_deny, decisions_defer
         nonlocal consequential_proposed, consequential_allowed, high_risk_action_count
-        nonlocal false_denials, useful_allowed, useful_proposed, recovering
-        nonlocal recon_done, recon_latency, conflict_count
+        nonlocal false_denials, denied_consequential, useful_cons_allowed, useful_cons_proposed
+        nonlocal recovering, recon_done, recon_latency, conflict_count
 
         while env.now < duration:
             t = env.now
@@ -292,6 +313,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 neighbors = list(g.successors(aid)) if aid in g else []
                 auv.neighbor_table = neighbors
                 gw_reach = net.gateway_reachable(aid)
+                auv.local_observations["_gw_reachable"] = gw_reach
                 if gw_reach:
                     last_supervisor[aid] = env.now
                     if env.now - last_auth[aid] > float(cfg.governance.authority_refresh_s):
@@ -332,14 +354,25 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 conn = classifier.classify(metrics, recovering=recovering)
                 _bump(connectivity_ticks, conn.value)
 
+                age_s = authority_age(env.now, last_auth[aid])
+                if env.now >= capsules[aid].hard_expiry:
+                    freshness = AuthorityFreshness.HARD_EXPIRED
+                else:
+                    freshness = classify_freshness(age_s, capsules[aid], freshness_policy)
+
                 proposal = planner.propose(world, aid)
                 atype = proposal.action_type.value
                 risk_key = "consequential" if proposal.risk_class == RiskClass.CONSEQUENTIAL else "low"
                 _bump(proposed_by_type, atype)
+                label = None
                 if proposal.risk_class == RiskClass.CONSEQUENTIAL:
                     consequential_proposed += 1
-                if proposal.risk_class == RiskClass.LOW:
-                    useful_proposed += 1
+                    label = oracle_label(proposal, world)
+                    if label.mission_beneficial:
+                        useful_cons_proposed += 1
+                    _bump(coverage_by_class.setdefault(atype, {"proposed": 0, "ALLOW": 0, "DENY": 0, "DEFER": 0}), "proposed")
+                    _bump(coverage_by_conn[conn.value], "proposed")
+                    _bump(coverage_by_fresh[freshness.value], "proposed")
 
                 result = controller.decide(
                     proposal,
@@ -358,25 +391,58 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 decision_by_type.setdefault(atype, {"ALLOW": 0, "DENY": 0, "DEFER": 0})
                 _bump(decision_by_type[atype], dec)
                 _bump(decision_by_risk[risk_key], dec)
+                if proposal.risk_class == RiskClass.CONSEQUENTIAL:
+                    _bump(coverage_by_class[atype], dec)
+                    _bump(coverage_by_conn[conn.value], dec)
+                    _bump(coverage_by_fresh[freshness.value], dec)
 
                 if result.decision == GovernorDecision.ALLOW:
                     decisions_allow += 1
                     adapter.execute(world, proposal)
-                    if proposal.risk_class == RiskClass.LOW:
-                        useful_allowed += 1
                     if proposal.risk_class == RiskClass.CONSEQUENTIAL:
                         consequential_allowed += 1
-                        # Uniform high-risk definition across baselines:
-                        # consequential executed under disconnection-like connectivity
-                        # or without supervisor reachability.
+                        if label is not None and label.mission_beneficial:
+                            useful_cons_allowed += 1
                         if conn in DISCONNECTED_LIKE or not gw_reach:
                             high_risk_action_count += 1
                 elif result.decision == GovernorDecision.DEFER:
                     decisions_defer += 1
                 else:
                     decisions_deny += 1
-                    if proposal.risk_class == RiskClass.LOW:
-                        false_denials += 1
+                    if proposal.risk_class == RiskClass.CONSEQUENTIAL and label is not None:
+                        denied_consequential += 1
+                        denied_consequential_log.append(
+                            {
+                                "time_s": float(env.now),
+                                "auv": aid,
+                                "action": atype,
+                                "connectivity": conn.value,
+                                "freshness": freshness.value,
+                                "authority_age_s": age_s,
+                                "mission_beneficial": label.mission_beneficial,
+                                "violates_frozen_risk": label.violates_frozen_risk,
+                                "false_denial": label.false_denial_if_denied,
+                                "oracle_reason": label.reason,
+                                "rationale": proposal.rationale,
+                            }
+                        )
+                        if label.false_denial_if_denied:
+                            false_denials += 1
+
+                if aid == timeline_auv:
+                    authority_timeline.append(
+                        {
+                            "time_s": float(env.now),
+                            "connectivity": conn.value,
+                            "authority_age_s": age_s,
+                            "freshness": freshness.value,
+                            "action": atype,
+                            "risk": risk_key,
+                            "decision": dec,
+                            "gw_reachable": gw_reach,
+                            "outage": bool(outage_start <= env.now < outage_end),
+                        }
+                    )
 
                 journals[aid].append(
                     NodeJournalEntry(
@@ -403,8 +469,8 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             governance_bytes += d.packet.size_bytes
 
     unauth_rate = high_risk_action_count / max(consequential_proposed, 1)
-    false_denial_rate = false_denials / max(useful_proposed, 1)
-    retention = useful_allowed / max(useful_proposed, 1)
+    false_denial_rate = false_denials / max(denied_consequential, 1)
+    retention = useful_cons_allowed / max(useful_cons_proposed, 1)
 
     energy_p = sum(a.energy.propulsion_j for a in world.auvs.values())
     energy_c = sum(a.energy.communication_j for a in world.auvs.values()) + 0.001 * total_bytes
@@ -412,6 +478,19 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
 
     total_conn_ticks = max(sum(connectivity_ticks.values()), 1)
     conn_occupancy = {k: v / total_conn_ticks for k, v in connectivity_ticks.items()}
+
+    ub = world_utility(world, unresolved_conflicts=conflict_count)
+    exercised = [c for c, v in coverage_by_class.items() if v.get("proposed", 0) > 0]
+    conn_frac = {}
+    for s, v in coverage_by_conn.items():
+        tot = max(v.get("proposed", 0), 1)
+        conn_frac[s] = {k: (v.get(k, 0) / tot if k != "proposed" else v.get(k, 0)) for k in ("proposed", "ALLOW", "DENY", "DEFER")}
+        conn_frac[s]["fraction_of_consequential"] = v.get("proposed", 0) / max(consequential_proposed, 1)
+    fresh_frac = {}
+    for s, v in coverage_by_fresh.items():
+        tot = max(v.get("proposed", 0), 1)
+        fresh_frac[s] = {k: v.get(k, 0) for k in ("proposed", "ALLOW", "DENY", "DEFER")}
+        fresh_frac[s]["fraction_of_consequential"] = v.get("proposed", 0) / max(consequential_proposed, 1)
 
     prov = Provenance(
         git_commit=git_commit(Path(cfg.paths.root)),
@@ -424,7 +503,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     )
     metrics = RunMetrics(
         mission_completion_ratio=world.completion_ratio(),
-        mission_utility=world.mission_utility(),
+        mission_utility=ub.utility,
         unauthorized_high_risk_action_rate=unauth_rate,
         governance_false_denial_rate=false_denial_rate,
         useful_action_retention=retention,
@@ -445,12 +524,30 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             "consequential_proposed": consequential_proposed,
             "consequential_allowed": consequential_allowed,
             "false_denial_count": false_denials,
+            "denied_consequential_count": denied_consequential,
+            "useful_consequential_proposed": useful_cons_proposed,
+            "useful_consequential_allowed": useful_cons_allowed,
+            "useful_consequential_retention": retention,
+            "denied_consequential": denied_consequential_log[:200],
             "decisions_allow": decisions_allow,
             "decisions_deny": decisions_deny,
             "decisions_defer": decisions_defer,
             "proposed_by_type": proposed_by_type,
             "decision_by_type": decision_by_type,
             "decision_by_risk_class": decision_by_risk,
+            "action_opportunity_coverage": {
+                "by_class": coverage_by_class,
+                "by_connectivity": conn_frac,
+                "by_freshness": fresh_frac,
+                "exercised_consequential_classes": exercised,
+                "n_exercised_consequential_classes": len(exercised),
+                "valid_coverage": len(exercised) >= 4,
+            },
+            "utility_breakdown": ub.model_dump(),
+            "utility_freeze_id": UTILITY_FREEZE_ID,
+            "workload": world.workload,
+            "authority_timeline_auv": timeline_auv,
+            "authority_timeline": authority_timeline,
             "connectivity_state_occupancy": conn_occupancy,
             "connectivity_state_ticks": connectivity_ticks,
             "trace_backend": store.load_meta(trace.trace_id).get("backend"),

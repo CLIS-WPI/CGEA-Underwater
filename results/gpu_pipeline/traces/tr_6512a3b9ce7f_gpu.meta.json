@@ -1,0 +1,93 @@
+{
+  "trace_id": "tr_6512a3b9ce7f_gpu",
+  "environment_id": "paper_ssp_200m_v1",
+  "seed": 0,
+  "carrier_frequency_hz": 25000.0,
+  "num_samples": 60,
+  "torch_version": "2.9.1+cu126",
+  "cuda_device": "cuda:0",
+  "gpu_uuid": "509d8ab3-0c8e-8b98-fbf8-0c55f6ba9058",
+  "gpu_name": "NVIDIA H100 NVL",
+  "sionna_version": "2.1.0",
+  "gpu_total_memory_bytes": 99949674496,
+  "pipeline": "bellhop_parallel+sionna_ofdm_mc",
+  "bellhop_backend": "aubellhop",
+  "batch_sizes": [
+    20
+  ],
+  "max_batch_size": 20,
+  "monte_carlo_samples": 128,
+  "phy_config": {
+    "freeze_id": "acoustic_ofdm_phy_v1_2026-09-28",
+    "modulation": "qpsk",
+    "coding_rate": 0.5,
+    "fft_size": 512,
+    "n_data_carriers": 384,
+    "n_symbols": 32,
+    "cp_samples": 128,
+    "bandwidth_hz": 5000.0,
+    "packet_bits": 256,
+    "n_noise_realizations": 32,
+    "n_packet_realizations": 4,
+    "precision": "complex64",
+    "snr_threshold_db": 12.0
+  },
+  "phy_config_hash": "2223ee477b249d8e",
+  "git_commit": "c4f070d587a80909a668eadc2871d100b7ac940f",
+  "runtime_s": {
+    "bellhop_parallel": 3.0329828606918454,
+    "gpu_phy": 0.3137472737580538,
+    "total": 3.3507113186642528
+  },
+  "n_links": 20,
+  "n_times": 3,
+  "gpu_peak_memory_bytes": 1447114752,
+  "use_sionna_bridge": true,
+  "gpu_phy": true,
+  "allow_fallback": false,
+  "lut": {
+    "snr_db": [
+      16.629541669465752,
+      17.604280849670996,
+      19.066389619978857,
+      20.52849839028672,
+      23.452715930902446,
+      24.914824701210307,
+      26.86430306162079,
+      27.839042241826036
+    ],
+    "per": [
+      0.7890625,
+      0.93359375,
+      0.953125,
+      0.201171875,
+      0.51953125,
+      0.005208333333333333,
+      0.2109375,
+      0.1015625
+    ],
+    "rate_bps": [
+      2889.4454345703125,
+      966.3828735351562,
+      744.4368896484375,
+      13605.0087890625,
+      9284.28271484375,
+      20464.243815104168,
+      17578.8125,
+      20958.576171875
+    ],
+    "ber": [
+      0.00816679047420621,
+      0.011476994026452303,
+      0.00724665354937315,
+      0.002098004100844264,
+      0.0022589366417378187,
+      0.0015163422600987058,
+      0.00107351946644485,
+      0.0004520416259765625
+    ],
+    "phy_config_hash": "2223ee477b249d8e",
+    "note": "dense LUT from Bellhop+Sionna OFDM Monte Carlo; not a neural surrogate"
+  },
+  "note": "B1-B5 must replay this same persisted trace; SimPy does not recompute PHY."
+}

@@ -1,0 +1,13 @@
+# Acoustic OFDM PHY abstraction applied to Bellhop CIRs.
+# Not a claim that Sionna implements underwater acoustics natively.
+# Does not change CGEA governance thresholds.
+freeze_id: acoustic_ofdm_phy_v1_2026-09-28
+modulation: qpsk
+coding_rate: 0.5
+fft_size: 512
+n_data_carriers: 384
+n_symbols: 32
+cp_samples: 128
+n_noise_realizations: 32
+n_packet_realizations: 4
+precision: complex64

@@ -1,0 +1,6 @@
+{
+  "B5_conservative": "consequential ALLOW only if CONNECTED and supervisor_reachable; else DEFER/DENY",
+  "B5_nominal": "CONNECTED allow; DEGRADED allow iff supervisor else DEFER; PARTITIONED/ISOLATED/RECOVERING ALLOW",
+  "B5_permissive": "consequential ALLOW in all connectivity states",
+  "note": "Unchanged from E1-v1; not retuned"
+}

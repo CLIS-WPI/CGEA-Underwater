@@ -1,0 +1,63 @@
+{
+  "git_commit": "c4f070d587a80909a668eadc2871d100b7ac940f",
+  "allow_fallback": false,
+  "device": "cuda:0",
+  "old_pipeline": {
+    "n_links": 12,
+    "bellhop_s": 1.4934873254969716,
+    "sionna_wrap_s": 1.7828199276700616,
+    "total_s": 3.276307253167033,
+    "mean_snr_db": 22.464806000677186,
+    "mean_delay_s": 0.22550812363624573,
+    "links_per_s": 3.6626601453206913
+  },
+  "new_pipeline": {
+    "runtime_s": 3.3508300092071295,
+    "bellhop_parallel": 3.0329828606918454,
+    "gpu_phy": 0.3137472737580538,
+    "total": 3.3507113186642528,
+    "max_batch_size": 20,
+    "monte_carlo_samples": 128,
+    "gpu_peak_memory_bytes": 1447114752,
+    "trace_id": "tr_6512a3b9ce7f_gpu",
+    "n_samples": 60
+  },
+  "speedup_links": 1.6295998524567898,
+  "heavy_stress": {
+    "n_iters": 24,
+    "n_links": 48,
+    "sionna_a_shape": [
+      48,
+      1,
+      1,
+      1,
+      1,
+      32,
+      1
+    ],
+    "runtime_s": 2.82130272872746,
+    "packets_per_s": 209060.8689362585,
+    "links_per_s": 17.013417068380413,
+    "gpu_peak_memory_bytes": 55566477312,
+    "gpu_total_memory_bytes": 99949674496,
+    "gpu_memory_frac": 0.555944555019274,
+    "mean_ber": 0.08906697481870651,
+    "mean_per": 0.8795573115348816,
+    "device": "cuda:0",
+    "torch_version": "2.9.1+cu126",
+    "cuda_device": "cuda:0",
+    "gpu_uuid": "509d8ab3-0c8e-8b98-fbf8-0c55f6ba9058",
+    "gpu_name": "NVIDIA H100 NVL",
+    "sionna_version": "2.1.0"
+  },
+  "dmon_util_max": 100.0,
+  "dmon_util_mean": 28.225806451612904,
+  "validation_n": 12,
+  "snr_mae": 0.0,
+  "delay_mae": 1.24224859565647e-10,
+  "psp_note": "Old PSP is a logistic SNR map. New PSP is OFDM Monte-Carlo (1-BLER). Do not expect numerical identity.",
+  "b1_b5_identical_replay": true,
+  "lut_bins": 8,
+  "phy_config_hash": "2223ee477b249d8e",
+  "gpu_uuid": "509d8ab3-0c8e-8b98-fbf8-0c55f6ba9058"
+}

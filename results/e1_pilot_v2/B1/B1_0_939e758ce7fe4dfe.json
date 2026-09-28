@@ -1,0 +1,1071 @@
+{
+  "mission_completion_ratio": 0.8333333333333334,
+  "mission_utility": -156.0794,
+  "unauthorized_high_risk_action_rate": 0.3472222222222222,
+  "governance_false_denial_rate": 0.0,
+  "useful_action_retention": 1.0,
+  "governance_bytes": 79872,
+  "total_communication_bytes": 57856,
+  "governance_communication_overhead": 1.3805309734513274,
+  "reconciliation_latency_s": 79.15,
+  "conflict_count": 35,
+  "energy_propulsion_j": 14732.0,
+  "energy_communication_j": 57.856,
+  "energy_compute_j": 1148.0,
+  "provenance": {
+    "git_commit": "c4f070d587a80909a668eadc2871d100b7ac940f",
+    "configuration_hash": "939e758ce7fe4dfe",
+    "random_seed": 0,
+    "baseline": "B1",
+    "channel_trace_id": "tr_54fb653caded",
+    "environment_id": "paper_ssp_200m_v1",
+    "notes": "outage_duration_s=500.0"
+  },
+  "extra": {
+    "outage_duration_s": 500.0,
+    "outage_start_s": 200.0,
+    "outage_end_s": 700.0,
+    "high_risk_action_count": 25,
+    "consequential_proposed": 72,
+    "consequential_allowed": 67,
+    "false_denial_count": 0,
+    "denied_consequential_count": 5,
+    "useful_consequential_proposed": 6,
+    "useful_consequential_allowed": 6,
+    "useful_consequential_retention": 1.0,
+    "denied_consequential": [
+      {
+        "time_s": 320.0,
+        "auv": "auv_11",
+        "action": "change_high_level_objective",
+        "connectivity": "PARTITIONED",
+        "freshness": "fresh",
+        "authority_age_s": 160.0,
+        "mission_beneficial": false,
+        "violates_frozen_risk": true,
+        "false_denial": false,
+        "oracle_reason": "objective_change_not_mission_beneficial",
+        "rationale": "isolated_abort_objective"
+      },
+      {
+        "time_s": 400.0,
+        "auv": "auv_11",
+        "action": "change_high_level_objective",
+        "connectivity": "PARTITIONED",
+        "freshness": "aging",
+        "authority_age_s": 240.0,
+        "mission_beneficial": false,
+        "violates_frozen_risk": true,
+        "false_denial": false,
+        "oracle_reason": "objective_change_not_mission_beneficial",
+        "rationale": "isolated_abort_objective"
+      },
+      {
+        "time_s": 480.0,
+        "auv": "auv_11",
+        "action": "change_high_level_objective",
+        "connectivity": "PARTITIONED",
+        "freshness": "aging",
+        "authority_age_s": 320.0,
+        "mission_beneficial": false,
+        "violates_frozen_risk": true,
+        "false_denial": false,
+        "oracle_reason": "objective_change_not_mission_beneficial",
+        "rationale": "isolated_abort_objective"
+      },
+      {
+        "time_s": 560.0,
+        "auv": "auv_11",
+        "action": "change_high_level_objective",
+        "connectivity": "PARTITIONED",
+        "freshness": "stale",
+        "authority_age_s": 400.0,
+        "mission_beneficial": false,
+        "violates_frozen_risk": true,
+        "false_denial": false,
+        "oracle_reason": "objective_change_not_mission_beneficial",
+        "rationale": "isolated_abort_objective"
+      },
+      {
+        "time_s": 640.0,
+        "auv": "auv_11",
+        "action": "change_high_level_objective",
+        "connectivity": "PARTITIONED",
+        "freshness": "stale",
+        "authority_age_s": 480.0,
+        "mission_beneficial": false,
+        "violates_frozen_risk": true,
+        "false_denial": false,
+        "oracle_reason": "objective_change_not_mission_beneficial",
+        "rationale": "isolated_abort_objective"
+      }
+    ],
+    "decisions_allow": 799,
+    "decisions_deny": 5,
+    "decisions_defer": 0,
+    "proposed_by_type": {
+      "repeat_sonar_scan": 32,
+      "enter_exclusion_zone": 2,
+      "exceed_return_energy_reserve": 3,
+      "hold_station": 67,
+      "reassign_another_auv": 1,
+      "local_inference": 1,
+      "bounded_path_correction": 632,
+      "abandon_mandatory_inspection": 61,
+      "change_high_level_objective": 5
+    },
+    "decision_by_type": {
+      "repeat_sonar_scan": {
+        "ALLOW": 32,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "enter_exclusion_zone": {
+        "ALLOW": 2,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "exceed_return_energy_reserve": {
+        "ALLOW": 3,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "hold_station": {
+        "ALLOW": 67,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "reassign_another_auv": {
+        "ALLOW": 1,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "local_inference": {
+        "ALLOW": 1,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "bounded_path_correction": {
+        "ALLOW": 632,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "abandon_mandatory_inspection": {
+        "ALLOW": 61,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "change_high_level_objective": {
+        "ALLOW": 0,
+        "DENY": 5,
+        "DEFER": 0
+      }
+    },
+    "decision_by_risk_class": {
+      "low": {
+        "ALLOW": 732,
+        "DENY": 0,
+        "DEFER": 0
+      },
+      "consequential": {
+        "ALLOW": 67,
+        "DENY": 5,
+        "DEFER": 0
+      }
+    },
+    "action_opportunity_coverage": {
+      "by_class": {
+        "abandon_mandatory_inspection": {
+          "proposed": 61,
+          "ALLOW": 61,
+          "DENY": 0,
+          "DEFER": 0
+        },
+        "change_high_level_objective": {
+          "proposed": 5,
+          "ALLOW": 0,
+          "DENY": 5,
+          "DEFER": 0
+        },
+        "reassign_another_auv": {
+          "proposed": 1,
+          "ALLOW": 1,
+          "DENY": 0,
+          "DEFER": 0
+        },
+        "enter_exclusion_zone": {
+          "proposed": 2,
+          "ALLOW": 2,
+          "DENY": 0,
+          "DEFER": 0
+        },
+        "exceed_return_energy_reserve": {
+          "proposed": 3,
+          "ALLOW": 3,
+          "DENY": 0,
+          "DEFER": 0
+        }
+      },
+      "by_connectivity": {
+        "CONNECTED": {
+          "proposed": 0,
+          "ALLOW": 0.0,
+          "DENY": 0.0,
+          "DEFER": 0.0,
+          "fraction_of_consequential": 0.0
+        },
+        "DEGRADED": {
+          "proposed": 42,
+          "ALLOW": 1.0,
+          "DENY": 0.0,
+          "DEFER": 0.0,
+          "fraction_of_consequential": 0.5833333333333334
+        },
+        "PARTITIONED": {
+          "proposed": 30,
+          "ALLOW": 0.8333333333333334,
+          "DENY": 0.16666666666666666,
+          "DEFER": 0.0,
+          "fraction_of_consequential": 0.4166666666666667
+        },
+        "ISOLATED": {
+          "proposed": 0,
+          "ALLOW": 0.0,
+          "DENY": 0.0,
+          "DEFER": 0.0,
+          "fraction_of_consequential": 0.0
+        },
+        "RECOVERING": {
+          "proposed": 0,
+          "ALLOW": 0.0,
+          "DENY": 0.0,
+          "DEFER": 0.0,
+          "fraction_of_consequential": 0.0
+        }
+      },
+      "by_freshness": {
+        "fresh": {
+          "proposed": 68,
+          "ALLOW": 67,
+          "DENY": 1,
+          "DEFER": 0,
+          "fraction_of_consequential": 0.9444444444444444
+        },
+        "aging": {
+          "proposed": 2,
+          "ALLOW": 0,
+          "DENY": 2,
+          "DEFER": 0,
+          "fraction_of_consequential": 0.027777777777777776
+        },
+        "stale": {
+          "proposed": 2,
+          "ALLOW": 0,
+          "DENY": 2,
+          "DEFER": 0,
+          "fraction_of_consequential": 0.027777777777777776
+        },
+        "hard_expired": {
+          "proposed": 0,
+          "ALLOW": 0,
+          "DENY": 0,
+          "DEFER": 0,
+          "fraction_of_consequential": 0.0
+        }
+      },
+      "exercised_consequential_classes": [
+        "abandon_mandatory_inspection",
+        "change_high_level_objective",
+        "reassign_another_auv",
+        "enter_exclusion_zone",
+        "exceed_return_energy_reserve"
+      ],
+      "n_exercised_consequential_classes": 5,
+      "valid_coverage": true
+    },
+    "utility_breakdown": {
+      "freeze_id": "utility_v2_frozen_2026-09-28",
+      "completed_mandatory": 10,
+      "anomalies_resolved": 1,
+      "useful_reassignments": 1,
+      "missed_mandatory": 2,
+      "exclusion_violations": 2,
+      "reserve_violations": 3,
+      "duplicate_work": 0,
+      "total_energy_j": 15880.0,
+      "unresolved_conflicts": 35,
+      "terms": {
+        "completed_mandatory": 100.0,
+        "anomaly_resolved": 18.0,
+        "useful_reassignment": 12.0,
+        "missed_mandatory": -30.0,
+        "exclusion_violation": -16.0,
+        "reserve_violation": -30.0,
+        "duplicate_work": -0.0,
+        "energy": -0.0794,
+        "unresolved_conflict": -210.0
+      },
+      "utility": -156.0794
+    },
+    "utility_freeze_id": "utility_v2_frozen_2026-09-28",
+    "workload": "stress",
+    "authority_timeline_auv": "auv_08",
+    "authority_timeline": [
+      {
+        "time_s": 0.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "exceed_return_energy_reserve",
+        "risk": "consequential",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 20.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "exceed_return_energy_reserve",
+        "risk": "consequential",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 40.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "exceed_return_energy_reserve",
+        "risk": "consequential",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 60.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 80.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 100.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 120.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 140.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 160.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 180.0,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 200.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 220.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 240.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 80.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 260.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 100.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 280.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 120.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 300.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 140.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 320.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 160.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 340.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 180.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 360.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 200.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 380.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 220.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 400.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 240.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 420.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 260.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 440.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 280.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 460.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 300.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 480.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 320.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 500.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 340.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 520.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 360.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 540.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 380.0,
+        "freshness": "aging",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 560.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 400.0,
+        "freshness": "stale",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 580.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 420.0,
+        "freshness": "stale",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 600.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 440.0,
+        "freshness": "stale",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 620.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 460.0,
+        "freshness": "stale",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 640.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 480.0,
+        "freshness": "stale",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 660.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 500.0,
+        "freshness": "stale",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 680.0,
+        "connectivity": "PARTITIONED",
+        "authority_age_s": 520.0,
+        "freshness": "stale",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": false,
+        "outage": true
+      },
+      {
+        "time_s": 779.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 799.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 819.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 839.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 859.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 879.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 899.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 919.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 939.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 959.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 979.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 999.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1019.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1039.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.000000000000114,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1059.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.000000000000114,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1079.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1099.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1119.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1139.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1159.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1179.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1199.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1219.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1239.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1259.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1279.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1299.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1319.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1339.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 20.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1359.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 40.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1379.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 60.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      },
+      {
+        "time_s": 1399.15,
+        "connectivity": "DEGRADED",
+        "authority_age_s": 0.0,
+        "freshness": "fresh",
+        "action": "bounded_path_correction",
+        "risk": "low",
+        "decision": "ALLOW",
+        "gw_reachable": true,
+        "outage": false
+      }
+    ],
+    "connectivity_state_occupancy": {
+      "CONNECTED": 0.10696517412935323,
+      "DEGRADED": 0.5199004975124378,
+      "PARTITIONED": 0.373134328358209,
+      "ISOLATED": 0.0,
+      "RECOVERING": 0.0
+    },
+    "connectivity_state_ticks": {
+      "CONNECTED": 86,
+      "DEGRADED": 418,
+      "PARTITIONED": 300,
+      "ISOLATED": 0,
+      "RECOVERING": 0
+    },
+    "trace_backend": "aubellhop",
+    "allow_fallback": false,
+    "use_sionna_bridge": true,
+    "sionna_device": "cuda:0"
+  }
+}

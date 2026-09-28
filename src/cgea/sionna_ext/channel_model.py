@@ -98,8 +98,11 @@ class UnderwaterAcousticChannel:
         dtype_c = torch.complex64 if self.precision == "single" else torch.complex128
         dtype_f = torch.float32 if self.precision == "single" else torch.float64
 
-        a = torch.zeros(
-            (
+        coeffs = torch.tensor(self._coeffs, dtype=dtype_c, device=self.device)
+        delays = torch.tensor(self._delays, dtype=dtype_f, device=self.device)
+        a = (
+            coeffs.view(1, 1, 1, 1, 1, self.num_paths, 1)
+            .expand(
                 batch_size,
                 self.num_rx,
                 self.num_rx_ant,
@@ -107,23 +110,10 @@ class UnderwaterAcousticChannel:
                 self.num_tx_ant,
                 self.num_paths,
                 num_time_steps,
-            ),
-            dtype=dtype_c,
-            device=self.device,
+            )
+            .clone()
         )
-        tau = torch.zeros(
-            (batch_size, self.num_rx, self.num_tx, self.num_paths),
-            dtype=dtype_f,
-            device=self.device,
-        )
-
-        coeffs = torch.tensor(self._coeffs, dtype=dtype_c, device=self.device)
-        delays = torch.tensor(self._delays, dtype=dtype_f, device=self.device)
-
-        for p in range(self.num_paths):
-            a[:, :, :, :, :, p, :] = coeffs[p]
-            tau[:, :, :, p] = delays[p]
-
+        tau = delays.view(1, 1, 1, self.num_paths).expand(batch_size, self.num_rx, self.num_tx, self.num_paths).clone()
         _ = sampling_frequency
         return a, tau
 

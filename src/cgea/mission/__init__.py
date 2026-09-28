@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import Field
 
+from cgea.mission.utility import world_utility
 from cgea.types import CgeaBaseModel, Position3D
 
 
@@ -77,6 +78,9 @@ class InspectionSegment(CgeaBaseModel):
     end: Position3D
     mandatory: bool = True
     completed: bool = False
+    abandoned: bool = False
+    hazardous: bool = False
+    scans_required: int = 3
     owner: str | None = None
 
 
@@ -91,6 +95,7 @@ class AUVState(CgeaBaseModel):
     neighbor_table: list[str] = Field(default_factory=list)
     state_version: int = 0
     is_gateway: bool = False
+    failed: bool = False
 
 
 class MissionWorld(CgeaBaseModel):
@@ -100,24 +105,28 @@ class MissionWorld(CgeaBaseModel):
     segments: dict[str, InspectionSegment]
     exclusion_zones: list[dict[str, Any]] = Field(default_factory=list)
     time_s: float = 0.0
+    workload: str = "nominal"
+    failed_auv_ids: list[str] = Field(default_factory=list)
+    energy_shock_auv_ids: list[str] = Field(default_factory=list)
+    anomalies: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    exclusion_violation_count: int = 0
+    reserve_violation_count: int = 0
+    duplicate_work_count: int = 0
+    useful_reassignment_count: int = 0
+    objective_change_count: int = 0
 
     def completion_ratio(self) -> float:
         if not self.segments:
             return 1.0
-        done = sum(1 for s in self.segments.values() if s.completed)
+        done = sum(1 for s in self.segments.values() if s.completed and not s.abandoned)
         return done / len(self.segments)
 
-    def mission_utility(self) -> float:
-        """Utility: completed mandatory + 0.5 * completed optional - energy penalty."""
-        score = 0.0
-        for s in self.segments.values():
-            if s.completed:
-                score += 1.0 if s.mandatory else 0.5
-        total_energy = sum(
-            a.energy.propulsion_j + a.energy.communication_j + a.energy.compute_j
-            for a in self.auvs.values()
-        )
-        return score - 1e-6 * total_energy
+    def mission_utility(self, unresolved_conflicts: int = 0) -> float:
+        return world_utility(self, unresolved_conflicts=unresolved_conflicts).utility
+
+
+def _aid(i: int) -> str:
+    return f"auv_{i:02d}"
 
 
 def build_pipeline_mission(
@@ -127,11 +136,16 @@ def build_pipeline_mission(
     battery_j: float = 1e6,
     reserve_j: float = 1e5,
     mission_id: str = "pipeline_inspection_v1",
+    workload: str = "nominal",
 ) -> MissionWorld:
-    """12 AUVs + 1 surface gateway, pipeline divided into inspection segments."""
+    """12 AUVs + 1 surface gateway, pipeline divided into inspection segments.
+
+    workload='stress' adds mission-conditioned consequential opportunities:
+    failed AUV, energy shock, hazardous segment, exclusion-zone anomaly.
+    Geometry (n_auvs, length, depth) is unchanged.
+    """
     gateway_id = "gw0"
     auvs: dict[str, AUVState] = {}
-    # Surface gateway at origin
     auvs[gateway_id] = AUVState(
         auv_id=gateway_id,
         position=Position3D(x=0.0, y=0.0, z=0.0),
@@ -150,12 +164,11 @@ def build_pipeline_mission(
             start=Position3D(x=i * seg_len, y=0.0, z=depth_m),
             end=Position3D(x=(i + 1) * seg_len, y=0.0, z=depth_m),
             mandatory=True,
-            owner=f"auv_{i:02d}",
+            owner=_aid(i),
         )
 
     for i in range(n_auvs):
-        aid = f"auv_{i:02d}"
-        # Spread AUVs along pipeline
+        aid = _aid(i)
         x = (i + 0.5) * seg_len
         auvs[aid] = AUVState(
             auv_id=aid,
@@ -165,10 +178,57 @@ def build_pipeline_mission(
             mission_state=MissionStateEnum.INSPECTING,
         )
 
+    exclusion_zones = [{"x_min": 1000.0, "x_max": 1100.0, "y_min": -50.0, "y_max": 50.0}]
+    failed_ids: list[str] = []
+    shock_ids: list[str] = []
+    anomalies: dict[str, dict[str, Any]] = {}
+
+    if workload == "stress" and n_auvs >= 4:
+        # Place stressors in the far half of the pipeline so the default
+        # mid-fleet partition isolates them from the gateway.
+        fail_i = min(n_auvs - 3, 9) if n_auvs >= 12 else n_auvs - 1
+        shock_i = min(n_auvs - 4, 8) if n_auvs >= 12 else max(0, n_auvs - 2)
+        # Keep the hazardous segment in the gateway-side half so abandon is
+        # not pre-empted by exclusion/reassignment proposals.
+        haz_i = 4 if n_auvs >= 12 else max(0, n_auvs // 2)
+        obj_i = n_auvs - 1
+
+        failed_ids = [_aid(fail_i)]
+        auvs[failed_ids[0]].failed = True
+        auvs[failed_ids[0]].mission_state = MissionStateEnum.SAFE_MODE
+        auvs[failed_ids[0]].local_observations["actuator_fault"] = True
+
+        shock_ids = [_aid(shock_i)]
+        # Usable energy covers ~1 scan (50 J) then reserve pressure; finishing
+        # scans_required=4 requires dipping into reserve.
+        auvs[shock_ids[0]].energy.battery_j = reserve_j + 80.0
+
+        haz_sid = f"seg_{haz_i:02d}"
+        segments[haz_sid].hazardous = True
+        segments[haz_sid].scans_required = 20
+
+        # Exclusion around the energy-shock AUV so a shortcut to the leak
+        # is locally tempting.
+        zx = auvs[shock_ids[0]].position.x
+        exclusion_zones = [
+            {"x_min": zx - 50.0, "x_max": zx + 50.0, "y_min": -50.0, "y_max": 50.0}
+        ]
+        anomalies["leak_A"] = {
+            "x": zx,
+            "resolved": False,
+            "zone_index": 0,
+            "benefit_auv": shock_ids[0],
+        }
+        auvs[_aid(obj_i)].local_observations["may_abort_if_isolated"] = True
+
     return MissionWorld(
         mission_id=mission_id,
         auvs=auvs,
         gateway_id=gateway_id,
         segments=segments,
-        exclusion_zones=[{"x_min": 1000.0, "x_max": 1100.0, "y_min": -50.0, "y_max": 50.0}],
+        exclusion_zones=exclusion_zones,
+        workload=workload,
+        failed_auv_ids=failed_ids,
+        energy_shock_auv_ids=shock_ids,
+        anomalies=anomalies,
     )

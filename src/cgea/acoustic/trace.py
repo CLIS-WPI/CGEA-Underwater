@@ -35,6 +35,10 @@ class LinkSample(CgeaBaseModel):
     snr_db: float | None = None
     doppler_hz: float | None = None
     delay_spread_s: float | None = None
+    path_loss_db: float | None = None
+    expected_retransmissions: float | None = None
+    ber: float | None = None
+    bler: float | None = None
 
     model_config = {"arbitrary_types_allowed": True, "extra": "forbid"}
 
@@ -136,6 +140,10 @@ class ChannelTraceStore:
                     "snr_db": s.snr_db,
                     "doppler_hz": s.doppler_hz,
                     "delay_spread_s": s.delay_spread_s,
+                    "path_loss_db": s.path_loss_db,
+                    "expected_retransmissions": s.expected_retransmissions,
+                    "ber": s.ber,
+                    "bler": s.bler,
                 }
             )
         table = pa.Table.from_pylist(rows)
@@ -181,6 +189,10 @@ class ChannelTraceStore:
                     snr_db=row.get("snr_db"),
                     doppler_hz=row.get("doppler_hz"),
                     delay_spread_s=row.get("delay_spread_s"),
+                    path_loss_db=row.get("path_loss_db"),
+                    expected_retransmissions=row.get("expected_retransmissions"),
+                    ber=row.get("ber"),
+                    bler=row.get("bler"),
                 )
             )
         return ChannelTrace(
