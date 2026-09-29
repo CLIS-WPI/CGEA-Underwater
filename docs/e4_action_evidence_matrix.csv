@@ -1,0 +1,12 @@
+action,semantic_group,required_evidence,source,max_evidence_age_s,missing_behavior,invalid_behavior,rationale
+collision_avoidance,LOCAL-MOTION,LOCAL_NAVIGATION;LOCAL_ENERGY,self;self,40;60,DENY,DENY,Nav budget=2*sim_tick_s (20 s) for collision-time pose; energy=authority_refresh_s so reserve is recently sampled. Not a capsule-age copy.
+bounded_path_correction,LOCAL-MOTION,LOCAL_NAVIGATION;LOCAL_ENERGY,self;self,40;60,DENY,DENY,Same as collision_avoidance: local pose/path vs local energy. Independent of peer/assignment.
+repeat_sonar_scan,LOCAL-SENSING,LOCAL_OBSERVATION;LOCAL_ENERGY,self;self,60;60,DENY,DENY,Both local. 60 s=frozen authority_refresh_s: do not treat an observation older than a would-be refresh as current scan input.
+local_inference,LOCAL-SENSING,LOCAL_OBSERVATION;LOCAL_ENERGY,self;self,60;60,DENY,DENY,Inference is compute on last observation; same local budgets as scan.
+hold_station,LOCAL-MOTION,(none),n/a,n/a,ALLOW,ALLOW,Fallback idle. No remote evidence. Static low-risk.
+surfacing_safe_mode,LOCAL-MOTION,LOCAL_ENERGY;LOCAL_NAVIGATION,self;self,60;40,DENY,DENY,Safe-mode still needs local energy/pose; not a remote assignment act.
+reassign_another_auv,CROSS-AGENT,PEER_AVAILABILITY;SEGMENT_ASSIGNMENT,snapshot_or_recon;snapshot_or_recon,300;600,DENY,DENY,Peer liveness uses frozen authority_timeout_s (300). Assignment uses 2/3 hard_expiry_s (600). Different clocks (design B). Recruitment remains existing max_neighbor_recruits. Predicates: target_failed==true; segment mandatory and incomplete. NOT 180 or 400.
+enter_exclusion_zone,SUPERVISORY,(none for unlock),n/a,n/a,DENY,DENY,STATIC HARD-SAFETY. Fresh LOCAL_NAVIGATION must not allow. Evidence stage never unlocks PAPER forbid list.
+exceed_return_energy_reserve,SUPERVISORY,(none for unlock),n/a,n/a,DENY,DENY,STATIC HARD-SAFETY. LOCAL_ENERGY freshness must not allow reserve violation.
+abandon_mandatory_inspection,SUPERVISORY,SUPERVISOR_AUTHORITY;MISSION_OBJECTIVE,supervisor;supervisor,TBD;TBD,DENY,DENY,Statically forbidden today. TBD ages: no defensible non-forbid path until a future policy explicitly un-forbids this action. Do not implement a allow-path in E4-1.
+change_high_level_objective,SUPERVISORY,SUPERVISOR_AUTHORITY;MISSION_OBJECTIVE,supervisor;supervisor,TBD;TBD,DENY,DENY,Statically forbidden today. TBD: same. Evidence cannot weaken forbid.

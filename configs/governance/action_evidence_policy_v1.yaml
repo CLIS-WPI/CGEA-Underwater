@@ -1,0 +1,97 @@
+# DESIGN ONLY — action_evidence_policy_v1
+# Not wired into ExecutionGovernor. Do not retune after seeing future E4 results.
+# Capsule stays paper_risk_bounded_v1_2026-09-28; this file is a separate policy object.
+
+id: action_evidence_policy_v1
+status: design_only
+parent_policy: paper_risk_bounded_v1_2026-09-28
+hard_safety_independent: true
+# Age for budgets: now - trusted_at
+age_reference: trusted_at
+reassignment_budget_design: different  # B: PEER 300s vs SEGMENT 600s
+
+budgets_s:
+  LOCAL_OBSERVATION: 60     # authority_refresh_s
+  LOCAL_ENERGY: 60          # authority_refresh_s
+  LOCAL_NAVIGATION: 40      # 2 * mission.sim_tick_s (20)
+  PEER_AVAILABILITY: 300    # connectivity.authority_timeout_s
+  SEGMENT_ASSIGNMENT: 600   # (2/3) * hard_expiry_s
+  MISSION_OBJECTIVE: null   # TBD — no allow-path while action remains PAPER-forbidden
+  SUPERVISOR_AUTHORITY: null
+
+actions:
+  collision_avoidance:
+    group: LOCAL-MOTION
+    require: [LOCAL_NAVIGATION, LOCAL_ENERGY]
+    missing: DENY
+    invalid: DENY
+  bounded_path_correction:
+    group: LOCAL-MOTION
+    require: [LOCAL_NAVIGATION, LOCAL_ENERGY]
+    missing: DENY
+    invalid: DENY
+  repeat_sonar_scan:
+    group: LOCAL-SENSING
+    require: [LOCAL_OBSERVATION, LOCAL_ENERGY]
+    missing: DENY
+    invalid: DENY
+  local_inference:
+    group: LOCAL-SENSING
+    require: [LOCAL_OBSERVATION, LOCAL_ENERGY]
+    missing: DENY
+    invalid: DENY
+  hold_station:
+    group: LOCAL-MOTION
+    require: []
+    missing: ALLOW
+    invalid: ALLOW
+  surfacing_safe_mode:
+    group: LOCAL-MOTION
+    require: [LOCAL_ENERGY, LOCAL_NAVIGATION]
+    missing: DENY
+    invalid: DENY
+  reassign_another_auv:
+    group: CROSS-AGENT
+    require: [PEER_AVAILABILITY, SEGMENT_ASSIGNMENT]
+    predicates:
+      PEER_AVAILABILITY: "value.failed == true"
+      SEGMENT_ASSIGNMENT: "value.mandatory == true and value.incomplete == true"
+    missing: DENY
+    invalid: DENY
+    notes: recruitment remains max_neighbor_recruits; not an evidence type
+  enter_exclusion_zone:
+    group: SUPERVISORY
+    require: []
+    static_forbid: true
+    missing: DENY
+    invalid: DENY
+  exceed_return_energy_reserve:
+    group: SUPERVISORY
+    require: []
+    static_forbid: true
+    missing: DENY
+    invalid: DENY
+  abandon_mandatory_inspection:
+    group: SUPERVISORY
+    require: [SUPERVISOR_AUTHORITY, MISSION_OBJECTIVE]
+    static_forbid: true
+    ages_tbd: true
+    missing: DENY
+    invalid: DENY
+  change_high_level_objective:
+    group: SUPERVISORY
+    require: [SUPERVISOR_AUTHORITY, MISSION_OBJECTIVE]
+    static_forbid: true
+    ages_tbd: true
+    missing: DENY
+    invalid: DENY
+
+reason_codes:
+  - DENY_MISSING_EVIDENCE
+  - DENY_STALE_EVIDENCE
+  - DENY_INVALID_EVIDENCE
+  - DEFER_EVIDENCE_REFRESH
+
+future_baselines: [B0_nofreshness, B1_lease_400, B2_cgea, B3_evidence]
+dev_seeds: [0, 1, 2, 3, 4]
+test_seeds: [5, 6, 7, 8, 9]
