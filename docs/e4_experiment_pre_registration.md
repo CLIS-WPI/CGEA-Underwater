@@ -1,7 +1,29 @@
 # E4 experiment pre-registration (frozen conceptually; not run)
 
 **Do not run this campaign in E4-DESIGN.**  
-**Do not change this split or these baselines after implementation starts.**
+**Do not change this split or these baselines after implementation starts.**  
+**Do not retune evidence budgets on DEV or after seeing TEST.**
+
+## B3 policy composition (no B2 freshness inside B3)
+
+| ID | Composition |
+|----|-------------|
+| B0 NoFreshness | static risk + conditional rule |
+| B1 Lease-400 | static risk + binary **400 s** expiry + conditional rule |
+| B2 CGEA | static risk + **180/400/900** contraction + conditional rule |
+| B3 Evidence | static risk + **per-action evidence validity** + conditional rule |
+
+B3 pipeline:
+
+```
+static hard-safety / PAPER forbid
+  → capsule grants / action eligibility
+  → action-specific evidence requirement evaluation
+  → existing conditional predicate
+  → ALLOW / DENY / DEFER
+```
+
+B3 does **not** apply Fresh/Aging/Stale contraction or `DENY_HARD_EXPIRY` (see spec §4.2).
 
 ## Baselines (locked set)
 
@@ -14,12 +36,24 @@
 
 No fifth baseline after seeing B3.
 
+## Frozen evidence budgets (primary TEST)
+
+| Type | s | Role |
+|------|--:|------|
+| LOCAL_NAVIGATION | 40 | secondary local actions |
+| LOCAL_OBSERVATION | 60 | secondary local actions |
+| LOCAL_ENERGY | 60 | secondary local actions |
+| PEER_AVAILABILITY | 300 | **primary** reassignment |
+| SEGMENT_ASSIGNMENT | 600 | **primary** reassignment |
+
+Engineering assumptions, not optima. Sensitivity later may vary them; primary TEST may not.
+
 ## Independent factors (conceptual)
 
 1. Mission-state change timing (global recovery / no_change), local snapshot unchanged  
 2. Outage / update delay (reuse induced partition 200–1200 s unless a registered variant is added *before* DEV)  
-3. Proposal / authority age at the controlled action  
-4. Action type (at least reassignment **and** one local action; do not pool only reassignment)
+3. Proposal timing / evidence age at the controlled action  
+4. Action type: **primary = `reassign_another_auv`**; local actions collected **separately**
 
 Policy thresholds are **not** a TEST factor.
 
@@ -32,30 +66,41 @@ Same as E3:
 
 Bootstrap: cluster-preserving, 10 000 resamples, seed **20260929**.
 
-## Success criterion (B3 useful only if)
+## Primary scientific comparison
 
-On held-out TEST, B3 improves the tradeoff relative to **both** B1 and B2, via at least one of:
+**Primary action:** `reassign_another_auv`  
+**Primary metrics:** useful-valid execution; obsolete execution; ownership override; hard-safety  
 
-- **A.** Higher useful-valid execution, obsolete **no worse**  
-- **B.** Lower obsolete execution, useful-valid **no worse**  
-- **C.** Pareto dominance over both on a **predeclared** action×context region, hard-safety not worse  
+Local-action outcomes are **secondary** (architectural differentiation only).  
+**Do not** pool large numbers of local-action events with reassignment to manufacture a better aggregate Pareto result. Report local actions in a separate table.
 
-If B3 is only another interior tradeoff point: **do not claim superiority.**
+## Success criterion (reassignment only)
 
-Useful-valid / obsolete stay **event-level** definitions from E2/E3 (local authorize vs global oracle). Hard-safety remains the four frozen classes only.
+B3 may claim an improved frontier only if, on held-out TEST, **for the PRIMARY reassignment analysis**, it achieves either:
+
+- **A.** higher useful-valid execution at **no worse** obsolete execution than **both** locked B1 lease-400 **and** B2 CGEA;  
+- **OR B.** lower obsolete execution at **no worse** useful-valid execution than **both**;  
+- **OR C.** a **predeclared** context-region Pareto improvement that is visible **without** pooling unrelated local-action events.
+
+Hard-safety must not worsen (four frozen classes).
+
+Local-action preservation may support the architectural claim but **cannot by itself** establish B3 superiority on reassignment.
+
+If B3 is only another interior tradeoff on reassignment: **do not claim superiority.**
+
+Useful-valid / obsolete stay E2/E3 event-level definitions (local authorize vs global oracle).
 
 ## Reporting (mandatory slices)
 
-Not one pooled headline. Report by:
+Reassignment (primary), then local actions (secondary), by:
 
-- action class (local vs cross-agent vs supervisory)  
 - evidence type that failed or passed  
 - context-valid vs context-obsolete  
 - connectivity at decision  
 
 ## Overhead / cost
 
-Use replayed `size_bits / estimated_rate_bps` airtime (already in network). Add evidence-refresh bytes/airtime if new packets appear. Optional host-side governor/store latency; no embedded-AUV claim.
+Use replayed `size_bits / estimated_rate_bps` airtime. Add evidence-refresh bytes/airtime if new packets appear. Optional host-side latency; no embedded-AUV claim.
 
 ## Traces
 

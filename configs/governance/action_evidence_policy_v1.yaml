@@ -1,9 +1,15 @@
 # DESIGN ONLY — action_evidence_policy_v1
-# Not wired into ExecutionGovernor. Do not retune after seeing future E4 results.
-# Capsule stays paper_risk_bounded_v1_2026-09-28; this file is a separate policy object.
+# Not wired into ExecutionGovernor.
+# Budgets below are FROZEN pre-implementation engineering constants.
+# Do not tune on DEV. Do not select alternatives after seeing E4 outcomes.
+# B3 does NOT apply B2 180/400/900 contraction or DENY_HARD_EXPIRY.
+# Capsule paper_risk_bounded_v1 remains the B2 parent; this file is B3 only.
 
 id: action_evidence_policy_v1
 status: design_only
+budgets_frozen: true
+apply_cgea_multistage_contraction: false
+apply_capsule_hard_expiry_deny: false
 parent_policy: paper_risk_bounded_v1_2026-09-28
 hard_safety_independent: true
 # Age for budgets: now - trusted_at
@@ -92,6 +98,12 @@ reason_codes:
   - DENY_INVALID_EVIDENCE
   - DEFER_EVIDENCE_REFRESH
 
+# B0: static + conditional
+# B1: static + lease 400 + conditional
+# B2: static + 180/400/900 + conditional
+# B3: static + evidence budgets + conditional
 future_baselines: [B0_nofreshness, B1_lease_400, B2_cgea, B3_evidence]
+primary_action: reassign_another_auv
 dev_seeds: [0, 1, 2, 3, 4]
 test_seeds: [5, 6, 7, 8, 9]
+bootstrap_seed: 20260929

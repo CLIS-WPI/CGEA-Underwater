@@ -1,9 +1,11 @@
 # E4-DESIGN — Action-Dependent Evidence Authority
 
-**Status:** frozen specification. Design only. Not implemented. Not evaluated.  
-**Parent:** `3b0bc8c19fb2b1f724c745a34a1024cbcab266a6`  
+**Status:** frozen specification + semantics patch. Design only. Not implemented. Not evaluated.  
+**Parent (original design):** `3b0bc8c19fb2b1f724c745a34a1024cbcab266a6`  
+**Design commit:** `ed6c19247388e38e778cb29375c3356284fa1ef5`  
 **Policy object:** `action_evidence_policy_v1` (separate from `paper_risk_bounded_v1_2026-09-28`)  
-**Does not retune:** CGEA 180/400/900, E3 lease TTL 400 s, utility, oracle, PHY.
+**Does not retune:** CGEA 180/400/900, E3 lease TTL 400 s, utility, oracle, PHY.  
+**Evidence budgets:** frozen pre-implementation constants. Not DEV-tuned. Not TEST-selected.
 
 ---
 
@@ -31,7 +33,7 @@ On held-out E3 TEST (15 clusters):
 
 CGEA does **not** dominate the 400 s lease. E4 must **not** be designed to force dominance on that same grid. E4 exists because **reassignment, local motion, and supervisory actions do not depend on the same facts**.
 
-E2-F remains in force: **fresh authority (or fresh evidence) does not imply correct mission state.** If the last trusted peer-availability record still says `failed=true` after the target has recovered, a budgeted policy can still authorize an obsolete reassignment.
+E2-F is a **first-class failure case**. **Evidence freshness bounds age, not semantic truth.** A `PEER_AVAILABILITY` record that is still within **300 s** may still be wrong if the target recovered after the record was trusted. B3 can still execute an obsolete reassignment in that window.
 
 ---
 
@@ -96,16 +98,49 @@ ActionEvidenceRequirement:
 
 `object_binding` is `self`, `proposal.parameters.target_auv`, or `proposal.parameters.segment_id`.
 
-**Executability (conceptual):**
+**B3 decision pipeline (mandatory; B2 contraction is not a stage):**
 
 ```
-Executable(action) =
-    StaticHardSafety(action)                 # never weakened
-    AND StaticCapsuleForbid/Allow(action)    # paper grants, existing
-    AND RequirementsSatisfied(action, Store) # NEW
+static hard-safety / PAPER forbid
+    → capsule grants / action eligibility
+    → action-specific evidence requirement evaluation
+    → existing conditional predicate
+    → ALLOW / DENY / DEFER
 ```
 
-Existing multi-stage capsule contraction and the locked 400 s lease remain **baselines**, not inputs that E4 is allowed to retune.
+Do **not** pass a B3 proposal through Fresh → Aging → Stale action contraction after evidence evaluation. The 180/400/900 multi-stage policy is **B2 only**.
+
+---
+
+## 4.1 B3 policy composition
+
+| Baseline | Composition |
+|----------|-------------|
+| **B0 NoFreshness** | static risk + conditional rule |
+| **B1 Lease-400** | static risk + binary 400 s expiry + conditional rule |
+| **B2 CGEA** | static risk + 180/400/900 contraction + conditional rule |
+| **B3 Evidence** | static risk + per-action evidence validity + conditional rule |
+
+There is **no hidden reuse of B2 freshness inside B3**.
+
+---
+
+## 4.2 Outer capsule `hard_expiry` (design conflict — do not retain silently)
+
+`AuthorityCapsule.hard_expiry` (900 s after issue in the frozen CGEA config) is the **B2** administrative / hard-expiry band. Today's `ExecutionGovernor` maps `now >= hard_expiry` to `DENY_HARD_EXPIRY` for all consequential actions.
+
+**Preferred E4 / B3 semantics:**
+
+- static PAPER hard-safety prohibitions always remain active;
+- **action evidence budgets** determine B3 action validity;
+- legacy **180/400/900 contraction is not applied to B3**;
+- **no hidden global timer** may override the evidence policy unless it is declared as a *separate* administrative mechanism.
+
+**Conflict flag (before implementation):** if B3 still runs the existing `DENY_HARD_EXPIRY` path, a capsule issued at the E2/E4 epoch \(t=180\) would globally shut down consequential actions at \(t=1080\) (age 900 s), **independent of** `SEGMENT_ASSIGNMENT` (600 s) and `PEER_AVAILABILITY` (300 s). That is a third global lease, not the evidence policy.
+
+**Resolution for B3:** do **not** apply capsule `hard_expiry` as an action-contraction gate. The 900 s value remains (1) a **B2 baseline** parameter and (2) the **arithmetic source** of the frozen 600 s assignment budget (\(2/3 \times 900\)). Mission end remains the existing 1400 s simulation horizon, not a reused CGEA hard-expiry deny.
+
+If a future campaign needs an explicit B3 administrative cutoff, register it as a new named constant—do not silently keep `DENY_HARD_EXPIRY`.
 
 ---
 
@@ -119,17 +154,17 @@ The capsule may carry only `evidence_policy_id` (string) if a future implementat
 
 ### 5.2 Governor: smallest addition
 
-Do **not** rewrite `ExecutionGovernor.decide`. Add one stage **after** static forbid / hard-safety and **before** conditional reassignment / age contraction used by B2/B3 baselines:
+Do **not** rewrite `ExecutionGovernor.decide` for B0–B2. For **B3 only**, compose:
 
 ```
-decide(..., evidence_store=None, now, proposal, ...):
-    # existing RECOVERING / hard-safety / forbidden
-    if evidence_store is not None and policy enabled:
-        ev = evaluate_requirements(proposal, evidence_store, now, policy)
-        if ev.fail:
-            return DENY_* or DEFER_EVIDENCE_REFRESH
-    # existing freshness / lease / conditional_ok
+# 1 static hard-safety / PAPER forbid  (never skip)
+# 2 capsule grants / action eligibility (forbid list, grants — not 180/400/900 contraction)
+# 3 evaluate_requirements(proposal, evidence_store, now, action_evidence_policy_v1)
+# 4 existing conditional_ok (recruits, local snapshot predicates)
+# 5 ALLOW / DENY / DEFER
 ```
+
+B3 **must not** call `contract_capsule` / `classify_freshness` aging-stale bands, **must not** use `freshness_mode=continuous` contraction, and **must not** apply `DENY_HARD_EXPIRY` (see §4.2). B1 lease and B2 contraction remain other baselines' `decide` paths.
 
 New reason codes (audit-only; do not reuse `DENY_FORBIDDEN` or `DENY_LEASE_EXPIRED`):
 
@@ -182,7 +217,7 @@ See §5.2. Existing codes (`DENY_FORBIDDEN`, `DENY_CONDITIONAL_UNMET`, `DENY_LEA
 
 | Mode | What happens | Honest bound |
 |------|----------------|--------------|
-| Evidence fresh but wrong | E2-F: snapshot still `target_failed=true` inside PEER budget | Policy bounds **age**, not **truth** |
+| Evidence fresh but wrong | E2-F: `PEER_AVAILABILITY` still within 300 s after target recovery | **Evidence freshness bounds age, not semantic truth.** |
 | Missing | `DENY_MISSING_EVIDENCE` or DEFER if refresh pending | No guess from global world |
 | Stale | `DENY_STALE_EVIDENCE` | May deny a still-valid action (E2 aging-cost analogue) |
 | Conflicting local records | keep highest `version`; if versions tie, higher `trusted_at`; if still tied, **DENY_INVALID_EVIDENCE** | No silent merge |
@@ -201,14 +236,14 @@ Distributed consensus, mutual exclusion, CRDTs, locks, multi-agent negotiation, 
 
 ## 11. Future evaluation design
 
-See `docs/e4_experiment_pre_registration.md`. Baselines B0–B3 frozen. DEV seeds 0–4, TEST 5–9. Success only if B3 improves the frontier vs **both** locked CGEA and locked 400 s lease (or a declared action/context region) without worsening hard-safety. Sitting at another tradeoff point is **not** superiority.
+See `docs/e4_experiment_pre_registration.md`. Primary analysis is **`reassign_another_auv` only**. Local actions are secondary and **must not** be pooled into the superiority test. B3 may claim an improved frontier only under the refined A/B/C criterion there.
 
 ---
 
 ## 12. Supported future claims (if E4 TEST succeeds)
 
 - Conditional reassignment depends on **peer-availability and assignment evidence**, not only capsule age.  
-- Local sensing/motion can remain authorized under aged capsules if **local** evidence is present and in budget.  
+- Local sensing/motion can remain authorized when **local** evidence is in budget (architectural differentiation; **not** sufficient for B3 superiority).  
 - Hard-safety remains a separate static gate.
 
 ---
@@ -245,12 +280,17 @@ Per-AUV, in-memory, no sync protocol.
 
 Recommendation **B**: peer availability is a **discrete remote liveness bit** that can flip without the proposer acting (recovery). Segment assignment is a **slower ledger fact** that usually changes when a reassignment is executed. Binding them to one clock reintroduces a single lease.
 
-Chosen initial budgets (not copied from 180 or 400):
+**Frozen pre-implementation engineering constants (not optimal; not DEV-tuned; primary TEST must use these):**
 
-- `PEER_AVAILABILITY`: **300 s** = frozen `connectivity.authority_timeout_s` (how long the stack already treats authority-adjacent remote status as stale).  
-- `SEGMENT_ASSIGNMENT`: **600 s** = \(\frac{2}{3}\) of frozen `hard_expiry_s` (900 s): assignment may remain incomplete for a long dive; a peer-liveness-tight clock would over-deny takeover of still-incomplete work.
+| Type | Budget | Rationale |
+|------|--------|-----------|
+| `LOCAL_NAVIGATION` | **40 s** | \(2\times\) frozen `sim_tick_s` (20 s) |
+| `LOCAL_OBSERVATION` | **60 s** | frozen `authority_refresh_s` |
+| `LOCAL_ENERGY` | **60 s** | frozen `authority_refresh_s` |
+| `PEER_AVAILABILITY` | **300 s** | frozen `connectivity.authority_timeout_s` (remote status timeout). Not 180. Not 400. |
+| `SEGMENT_ASSIGNMENT` | **600 s** | slower mission-ledger evidence; \(\frac{2}{3}\) of the previously frozen **900 s hard horizon** (source of the number only; B3 does not apply that 900 s deny). |
 
-These are **engineering defaults** for a later DEV freeze, not TEST-tuned values. If DEV cannot justify them, mark TBD and stop—do not sneak in 180 or 400 to chase E3.
+These are **engineering assumptions**, not estimated optima. Future sensitivity studies may vary them; they must not replace the primary E4 TEST constants.
 
 ---
 
@@ -258,12 +298,12 @@ These are **engineering defaults** for a later DEV freeze, not TEST-tuned values
 
 1. `EvidenceRecord` + `EvidenceStore`  
 2. Load `action_evidence_policy_v1.yaml`  
-3. Governor hook + reason codes  
+3. B3 governor composition per §4 / §5.2 (no B2 contraction, no `DENY_HARD_EXPIRY`)  
 4. Event log fields (`evidence_ages`, `evidence_decision`)  
-5. Unit tests in §32 of the design prompt  
-6. DEV only (seeds 0–4)  
-7. Freeze evidence budgets  
-8. Held-out TEST (seeds 5–9)  
+5. Unit tests in §17  
+6. DEV diagnostics only (seeds 0–4) — **do not retune budgets**  
+7. Confirm frozen YAML unchanged  
+8. Held-out TEST (seeds 5–9) with frozen 40/60/60/300/600  
 
 ---
 
