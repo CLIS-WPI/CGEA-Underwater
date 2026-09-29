@@ -18,6 +18,7 @@ from cgea.experiments.e2_authority_age import (
     AUTHORITY_EPOCH_S,
     capture_snapshot,
     controlled_reassign_proposal,
+    e2_recovers_globally,
     fail_target,
     local_conditional_ok,
     recover_target,
@@ -447,7 +448,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 e2_state["epoch_done"] = True
             if (
                 e2_on
-                and e2_state["context"] == "target_recovers_age300"
+                and e2_recovers_globally(str(e2_state["context"]))
                 and (not e2_state["change_done"])
                 and t + 1e-9 >= e2_state["change_time"]
             ):

@@ -1,0 +1,26 @@
+# E2-F falsification: early global recovery while authority is still FRESH.
+# Does not overwrite E2 (authority_age_context_v1) results.
+name: e2f_early_state_change
+scenario_id: early_state_change_v1
+baselines:
+  - B4
+  - B4-NoFreshness
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+description: >
+  Early-state-change falsification. Recovery at authority age 60 s; one
+  reassignment at age 120 s (FRESH). Local snapshot for authorization;
+  global world for oracle only.
+
+e2_authority_age_context:
+  enabled: true
+  scenario_id: early_state_change_v1
+  authority_epoch_s: 180.0
+  proposer_id: auv_06
+  target_auv: auv_05
+  change_age_s: 60.0
+  context_mode: target_recovers_age60
+  authority_age_s: 120.0
+  challenge_time_s: 300.0
+  expected_freshness: fresh
+  outage_start_s: 200.0
+  outage_end_s: 1200.0

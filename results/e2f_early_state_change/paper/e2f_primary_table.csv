@@ -1,0 +1,2 @@
+context_mode,authority_age_s,recovery_time_s,challenge_time_s,B4_obsolete,NF_obsolete,delta_obsolete,B4_ownership_override,NF_ownership_override,B4_decisions,NF_decisions,CASE
+target_recovers_age60,120.0,240.0,300.0,1.0,1.0,0.0,1.0,1.0,ALLOW|ALLOW_AUTHORIZED,ALLOW|ALLOW_AUTHORIZED,F1

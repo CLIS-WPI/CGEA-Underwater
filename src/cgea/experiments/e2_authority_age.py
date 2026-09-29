@@ -18,6 +18,17 @@ AGE_CONDITIONS = {
     "hard_960": {"authority_age_s": 960.0, "challenge_time_s": 1140.0, "expected_freshness": "hard_expired"},
 }
 CONTEXT_MODES = ("benign_static", "target_recovers_age300")
+# E2-F only: recovery while still FRESH. Does not change E2 CHANGE_AGE_S.
+E2F_CONTEXT = "target_recovers_age60"
+E2F_CHANGE_AGE_S = 60.0
+E2F_CHALLENGE_AGE_S = 120.0
+E2F_CHALLENGE_TIME_S = AUTHORITY_EPOCH_S + E2F_CHALLENGE_AGE_S  # 300
+E2F_RECOVERY_TIME_S = AUTHORITY_EPOCH_S + E2F_CHANGE_AGE_S  # 240
+
+
+def e2_recovers_globally(context: str) -> bool:
+    """Global recovery contexts. Local snapshot is never refreshed from this."""
+    return str(context).startswith("target_recovers_")
 
 
 def expected_freshness_band(age_s: float, now_s: float, issued_at: float, hard_horizon_s: float) -> str:

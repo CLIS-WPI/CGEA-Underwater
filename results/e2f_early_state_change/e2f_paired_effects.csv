@@ -1,0 +1,8 @@
+metric,n_clusters,b4_minus_nofreshness_mean,ci95_lo,ci95_hi,all_clusters_identical
+obsolete_reassignment_execution,30,0.0,0.0,0.0,True
+ownership_override_of_available_target,30,0.0,0.0,0.0,True
+controlled_reassignment_allowed,30,0.0,0.0,0.0,True
+controlled_false_denial,30,0.0,0.0,0.0,True
+mission_utility,30,0.001353333333332311,0.0005999999999986017,0.0024833333333328747,False
+hard_safety_violation_count,30,0.0,0.0,0.0,True
+safe_useful_retention,30,0.0,0.0,0.0,True
