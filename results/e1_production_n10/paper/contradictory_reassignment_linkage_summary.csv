@@ -1,0 +1,13 @@
+item,value
+B4_contradictory_reassignment_events,140
+B5_nominal_contradictory_reassignment_events,152
+B4_conflicts_with_segment_id,140
+B5_conflicts_with_segment_id,152
+B4_conflict_segment_ids,seg_09 only
+B4_conflict_times,t=220.0 only
+aging48_same_run_conflict_on_reconstructed_seg,0
+aging48_source_auv_listed_in_conflict_proposers,0
+aging48_cells,paper_ssp_200m_strong_v1 seeds 0 and 8; all 6 outages; 4 AUVs each
+aging48_time_and_age,t=220 authority_age=220s PARTITIONED
+cross_cell_note,140 other B4 runs log contradictory_reassignment of seg_09 at t=220 when the same challenge ALLOWs multiple proposers; those are unmatched cells not the 12 aging-deny cells
+claim_freshness_prevented_conflicts,NOT_SUPPORTED

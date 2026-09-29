@@ -1,0 +1,32 @@
+quantity,value,note
+aging_reassign_events,48,exact extract from denied_consequential
+beneficial_true,48,logged mission_beneficial
+safe_true,48,not violates_frozen_risk; reassign class is always False in oracle.VIOLATES_FROZEN_RISK
+beneficial_and_safe,48,SUR set membership at proposal time
+aging_reassign_sur_denominator_count,48,proposed ∩ beneficial ∩ ¬violates_frozen_risk
+aging_reassign_sur_numerator_count,0,all 48 DENY so absent from numerator
+aging_reassign_sur_lost_count,48,"descriptive: in denom, not in num; not a causal ΔSUR"
+NONCAUSAL_cell_B4_0_00f5fe28e8311550_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_0_00f5fe28e8311550_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_0_156373d7c40b004e_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_0_156373d7c40b004e_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_0_66b040879785adf1_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_0_66b040879785adf1_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_0_7ef56cddb6728de0_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_0_7ef56cddb6728de0_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_0_ab4aabfdc4a1a401_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_0_ab4aabfdc4a1a401_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_0_be30d011885e8efb_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_0_be30d011885e8efb_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_8_2dd7c0e065c3f957_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_8_2dd7c0e065c3f957_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_8_5b412e7813f385bd_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_8_5b412e7813f385bd_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_8_81c15f76451e529b_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_8_81c15f76451e529b_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_8_91d14137d47e3c83_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_8_91d14137d47e3c83_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_8_98bdbaca0c1d0204_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_8_98bdbaca0c1d0204_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
+NONCAUSAL_cell_B4_8_edf0265237a646f1_SUR_as_logged,0.2,num=1 den=5 aging_sur_events=4
+NONCAUSAL_cell_B4_8_edf0265237a646f1_SUR_if_48_removed_from_denom,1.0,diagnostic only; does not replay execution
