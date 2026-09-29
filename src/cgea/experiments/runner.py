@@ -282,6 +282,16 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         planner.challenge_cohort = {f"auv_{i:02d}" for i in range(n_auvs // 2, n_auvs)}
     adapter = ExecutionAdapter()
     controller = make_baseline(baseline, planner, adapter)
+    if str(baseline) in ("B4-FixedExpiry", "B4_FixedExpiry", "B4_fixed_expiry"):
+        ttl_raw = None
+        if e2_cfg is not None:
+            ttl_raw = e2_cfg.get("lease_ttl_s")
+        if ttl_raw is None:
+            ttl_raw = cfg.experiment.get("lease_ttl_s")
+        if ttl_raw is None or str(ttl_raw).lower() in ("inf", "infinity", "none"):
+            controller.lease_ttl_s = float("inf")
+        else:
+            controller.lease_ttl_s = float(ttl_raw)
 
     freshness_mode = str(cfg.governance.get("freshness_mode", "continuous"))
     immediate_resume = bool(cfg.governance.get("immediate_resume", False))
@@ -889,6 +899,18 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                         "utility_after": util_after,
                         "owner_before": owner_before,
                         "owner_after": owner_after,
+                        "lease_ttl_s": getattr(controller, "lease_ttl_s", None),
+                        "lease_state": (
+                            "EXPIRED"
+                            if getattr(controller, "lease_ttl_s", None) is not None
+                            and float(getattr(controller, "lease_ttl_s")) < float("inf")
+                            and age_s >= float(controller.lease_ttl_s)
+                            else (
+                                "VALID"
+                                if str(baseline) in ("B4-FixedExpiry", "B4_FixedExpiry", "B4_fixed_expiry")
+                                else None
+                            )
+                        ),
                     }
 
                 if aid == timeline_auv:
@@ -977,6 +999,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             raise RuntimeError("E2: controlled event was not logged")
 
     acc = net.total_bytes()
+    air = net.total_airtime_s()
     governance_bytes = int(acc["governance_tx"])
     total_bytes = int(acc["tx"])
     mission_tx = int(acc.get("data_tx", total_bytes - governance_bytes))
@@ -1065,8 +1088,15 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             "ablation_variant": (
                 "b4_no_freshness_v1"
                 if str(baseline) in ("B4-NoFreshness", "B4_NoFreshness", "B4_no_freshness")
-                else None
+                else (
+                    "fixed_expiry_v1"
+                    if str(baseline) in ("B4-FixedExpiry", "B4_FixedExpiry", "B4_fixed_expiry")
+                    else None
+                )
             ),
+            "lease_ttl_s": getattr(controller, "lease_ttl_s", None)
+            if str(baseline) in ("B4-FixedExpiry", "B4_FixedExpiry", "B4_fixed_expiry")
+            else None,
             "useful_reassignment_count": int(world.useful_reassignment_count),
             "duplicate_work_count": int(world.duplicate_work_count),
             "missed_mandatory": int(ub.missed_mandatory),
@@ -1128,6 +1158,12 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             "e2_authority_epoch_s": e2_state.get("epoch") if e2_on else None,
             "e2_capsule_id": e2_state.get("capsule_id") if e2_on else None,
             "e2_controlled_event": e2_state.get("event") if e2_on else None,
+            "governance_airtime_s": float(air["governance_airtime_s"]),
+            "mission_airtime_s": float(air["mission_airtime_s"]),
+            "total_airtime_s": float(air["total_airtime_s"]),
+            "governance_airtime_frac": float(air["governance_airtime_s"]) / max(duration, 1e-9),
+            "mission_airtime_frac": float(air["mission_airtime_s"]) / max(duration, 1e-9),
+            "total_airtime_frac": float(air["total_airtime_s"]) / max(duration, 1e-9),
         },
     )
     out_dir = Path(cfg.paths.results) / str(cfg.experiment.name) / baseline

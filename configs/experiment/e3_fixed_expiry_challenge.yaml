@@ -1,0 +1,32 @@
+# Frozen E3 split. Do not change after seeing results.
+name: e3_fixed_expiry_challenge
+dev_seeds: [0, 1, 2, 3, 4]
+test_seeds: [5, 6, 7, 8, 9]
+ttl_candidates_s: [60, 120, 180, 240, 400, 600, 900, infinity]
+proposal_ages_s: [120, 180, 240, 360, 520, 760, 960]
+contexts:
+  - no_change
+  - recover_age_60
+  - recover_age_150
+  - recover_age_300
+  - recover_age_450
+  - recover_age_750
+cgea_age_180_classification: aging  # age_s >= 180 in classify_freshness
+authority_epoch_s: 180.0
+outage_start_s: 200.0
+outage_end_s: 1200.0
+proposer_id: auv_06
+target_auv: auv_05
+selection_rule: >
+  Minimize obsolete_execution_rate subject to useful_valid_execution_rate >= 0.80.
+  Ties: highest useful_valid, then longer TTL. If none meet the floor, maximize
+  useful_valid - obsolete, then longer TTL.
+
+e2_authority_age_context:
+  enabled: true
+  scenario_id: e3_fixed_expiry_v1
+  authority_epoch_s: 180.0
+  proposer_id: auv_06
+  target_auv: auv_05
+  outage_start_s: 200.0
+  outage_end_s: 1200.0

@@ -28,7 +28,8 @@ E2F_RECOVERY_TIME_S = AUTHORITY_EPOCH_S + E2F_CHANGE_AGE_S  # 240
 
 def e2_recovers_globally(context: str) -> bool:
     """Global recovery contexts. Local snapshot is never refreshed from this."""
-    return str(context).startswith("target_recovers_")
+    c = str(context)
+    return c.startswith("target_recovers_") or c.startswith("recover_age_")
 
 
 def expected_freshness_band(age_s: float, now_s: float, issued_at: float, hard_horizon_s: float) -> str:

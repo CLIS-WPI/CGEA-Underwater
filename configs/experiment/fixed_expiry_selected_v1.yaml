@@ -1,0 +1,6 @@
+# Frozen after DEV. Do not retune on TEST.
+id: fixed_expiry_selected_v1
+lease_ttl_s: 400
+selection_rule: |
+  min obsolete s.t. useful_valid>=0.80; then max useful_valid; then longer TTL
+dev_seeds: [0, 1, 2, 3, 4]

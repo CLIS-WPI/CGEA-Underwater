@@ -35,6 +35,7 @@ class BaselineId(str, enum.Enum):
     B3_STATIC_BOUNDED = "B3"
     B4_CGEA = "B4"
     B4_NO_FRESHNESS = "B4-NoFreshness"
+    B4_FIXED_EXPIRY = "B4-FixedExpiry"
     B5_ADAPTIVE = "B5"  # alias → nominal
     B5_CONSERVATIVE = "B5_conservative"
     B5_NOMINAL = "B5_nominal"
@@ -219,6 +220,48 @@ class B4NoFreshness(B4CGEA):
         )
 
 
+class B4FixedExpiry(B4NoFreshness):
+    """fixed_expiry_v1: same governor as B4-NoFreshness; reassignment only while age < TTL."""
+
+    baseline_id = BaselineId.B4_FIXED_EXPIRY
+    ablation_variant = "fixed_expiry_v1"
+    lease_ttl_s: float = float("inf")
+
+    def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
+               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
+               violates_frozen_risk=False, conditional_ok=False):
+        from cgea.governance import authority_age
+        from cgea.mission import ActionType
+
+        age = authority_age(now, last_authority_update)
+        if (
+            proposal.action_type.value == ActionType.REASSIGN_ANOTHER_AUV.value
+            and age >= float(self.lease_ttl_s)
+        ):
+            return self.governor._log(
+                GovernorDecision.DENY,
+                ReasonCode.DENY_LEASE_EXPIRED,
+                proposal,
+                connectivity,
+                None,
+                capsule.capsule_id,
+            )
+        return super().decide(
+            proposal,
+            connectivity,
+            capsule,
+            last_authority_update,
+            now,
+            energy,
+            supervisor_reachable,
+            position,
+            freshness_mode="disabled",
+            immediate_resume=immediate_resume,
+            violates_frozen_risk=violates_frozen_risk,
+            conditional_ok=conditional_ok,
+        )
+
+
 class B5AdaptiveAutonomy(BaselineController):
     """Connectivity-aware adaptive autonomy (no capsule / no independent governor / no provenance)."""
 
@@ -307,6 +350,8 @@ def make_baseline(baseline: str | BaselineId, planner: MissionPlanner, adapter: 
 
     if key in ("B4-NoFreshness", "B4_NoFreshness", "B4_no_freshness"):
         return B4NoFreshness(planner, adapter)
+    if key in ("B4-FixedExpiry", "B4_FixedExpiry", "B4_fixed_expiry"):
+        return B4FixedExpiry(planner, adapter)
 
     mapping = {
         "B1": B1Centralized,

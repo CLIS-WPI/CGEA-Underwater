@@ -104,6 +104,7 @@ class UnderwaterNetwork:
         self.inbox: dict[str, list[Packet]] = defaultdict(list)
         self.deliveries: list[DeliveryRecord] = []
         self.bytes_tx_by_ptype: dict[str, int] = defaultdict(int)
+        self.airtime_s_by_ptype: dict[str, float] = defaultdict(float)
         self._handlers: dict[str, Callable[[Packet], None]] = {}
         self._forced_partition_groups: list[set[str]] | None = None
 
@@ -256,6 +257,7 @@ class UnderwaterNetwork:
 
         rate = max(sample.estimated_rate_bps, 1.0)
         tx_time = (packet.size_bytes * 8.0) / rate
+        self.airtime_s_by_ptype[packet.ptype.value] += float(tx_time)
         yield self.env.timeout(tx_time)
         self._dequeue(packet)
 
@@ -316,4 +318,13 @@ class UnderwaterNetwork:
             "total": tx,
             "governance_tx": gov_tx,
             "data_tx": tx - gov_tx,
+        }
+
+    def total_airtime_s(self) -> dict[str, float]:
+        gov = sum(self.airtime_s_by_ptype.get(t.value, 0.0) for t in GOVERNANCE_TX_TYPES)
+        total = sum(self.airtime_s_by_ptype.values())
+        return {
+            "governance_airtime_s": float(gov),
+            "mission_airtime_s": float(total - gov),
+            "total_airtime_s": float(total),
         }
