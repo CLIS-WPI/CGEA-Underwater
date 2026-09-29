@@ -25,6 +25,7 @@ from cgea.experiments.e2_authority_age import (
     resolve_target_segment,
     unfail_stress_targets,
 )
+from cgea.experiments.e4_dev_sanity import controlled_local_proposal
 from cgea.baselines import BaselineId, make_baseline
 from cgea.governance import (
     AuthorityFreshness,
@@ -341,6 +342,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         "event": None,
         "epoch_done": False,
         "change_done": False,
+        "peer_refresh_done": False,
     }
     if e2_on:
         proposer = str(e2_cfg.proposer_id)
@@ -496,6 +498,47 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 recover_target(world, e2_state["target"])
                 e2_state["change_done"] = True
                 e2_state["ground_truth_change_time"] = float(e2_state["change_time"])
+            e4_cell = (e2_cfg or {}).get("e4_cell") if e2_on else None
+            peer_refresh_s = None if e4_cell is None else e4_cell.get("peer_refresh_s")
+            if (
+                evidence_mode
+                and e2_on
+                and peer_refresh_s is not None
+                and (not e2_state.get("peer_refresh_done"))
+                and t + 1e-9 >= float(peer_refresh_s)
+                and e2_state.get("snapshot")
+            ):
+                from cgea.governance.evidence import (
+                    EvidenceType,
+                    apply_trusted_peer_only,
+                    next_remote_version,
+                )
+
+                pid = e2_state["proposer"]
+                snap = e2_state["snapshot"]
+                store_e = evidence_stores[pid]
+                tgt = str(snap["target_auv"])
+                apply_trusted_peer_only(
+                    store_e,
+                    target_auv=tgt,
+                    peer_failed=bool(snap["target_failed"]),
+                    trusted_at=float(env.now),
+                    version=next_remote_version(store_e, EvidenceType.PEER_AVAILABILITY, tgt),
+                    source="peer_status_packet",
+                )
+                net.send(
+                    Packet(
+                        packet_id=f"e4-peer-{pid}-{env.now}",
+                        src=world.gateway_id,
+                        dst=pid,
+                        ptype=PacketType.AUTHORITY,
+                        size_bytes=48,
+                        payload={"kind": "peer_status", "target_auv": tgt, "from_snapshot": True},
+                        created_at=env.now,
+                    )
+                )
+                e2_state["peer_refresh_done"] = True
+                e2_state["peer_refresh_time_s"] = float(env.now)
             if outage_start <= t < outage_end:
                 if partition_groups:
                     groups = [set(g) for g in partition_groups]
@@ -742,7 +785,14 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     if aid == e2_state["proposer"] and is_challenge:
                         if e2_state["snapshot"] is None:
                             raise RuntimeError("E2: snapshot missing at challenge")
-                        proposal = controlled_reassign_proposal(world, e2_state["snapshot"])
+                        e4c = (e2_cfg or {}).get("e4_cell") or {}
+                        act = str(e4c.get("controlled_action") or "reassign_another_auv")
+                        if act == ActionType.COLLISION_AVOIDANCE.value:
+                            proposal = controlled_local_proposal(
+                                world, e2_state["snapshot"], ActionType.COLLISION_AVOIDANCE
+                            )
+                        else:
+                            proposal = controlled_reassign_proposal(world, e2_state["snapshot"])
                         e2_state["n_controlled"] += 1
                     elif aid == e2_state["proposer"]:
                         proposal = planner._hold(auv, "e2_wait_controlled")
@@ -829,7 +879,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 util_before = None
                 owner_before = None
                 e2_global_before: dict[str, Any] | None = None
-                if e2_on and proposal.rationale == "e2_controlled_reassign":
+                if e2_on and proposal.rationale in ("e2_controlled_reassign", "e4_controlled_local"):
                     util_before = float(world_utility(world, unresolved_conflicts=0).utility)
                     sid = e2_state["segment_id"]
                     gseg_b = world.segments[sid]
@@ -923,7 +973,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                         }
                     )
 
-                if e2_on and proposal.rationale == "e2_controlled_reassign":
+                if e2_on and proposal.rationale in ("e2_controlled_reassign", "e4_controlled_local"):
                     snap = e2_state["snapshot"]
                     executed = result.decision == GovernorDecision.ALLOW
                     gseg = world.segments[e2_state["segment_id"]]
@@ -1018,6 +1068,22 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                                 else None
                             )
                         ),
+                        "controlled_action": atype,
+                        "authority_mode": "evidence" if evidence_mode else "cgea",
+                        "evidence_policy_id": result.evidence_policy_id,
+                        "evidence_evaluation": result.evidence_evaluation,
+                        "evidence_ages": (result.evidence_evaluation or {}).get("evidence_ages"),
+                        "evidence_gaps": (result.evidence_evaluation or {}).get("evidence_gaps"),
+                        "peer_refresh_time_s": e2_state.get("peer_refresh_time_s"),
+                        "proposal_time_s": float(env.now),
+                        "oracle_global_target_failed": bool(global_failed),
+                        "oracle_global_segment_owner": gb.get("global_segment_owner", owner_before),
+                        "oracle_global_segment_incomplete": bool(
+                            gb.get(
+                                "global_segment_incomplete",
+                                (not gseg.completed) and (not gseg.abandoned),
+                            )
+                        ),
                     }
 
                 if aid == timeline_auv:
@@ -1100,7 +1166,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     if e2_on:
         if int(e2_state["n_controlled"]) != 1:
             raise RuntimeError(
-                f"E2: expected exactly 1 controlled reassignment proposal, got {e2_state['n_controlled']}"
+                f"E2: expected exactly 1 controlled proposal, got {e2_state['n_controlled']}"
             )
         if e2_state.get("event") is None:
             raise RuntimeError("E2: controlled event was not logged")
@@ -1198,7 +1264,11 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 else (
                     "fixed_expiry_v1"
                     if str(baseline) in ("B4-FixedExpiry", "B4_FixedExpiry", "B4_fixed_expiry")
-                    else None
+                    else (
+                        "action_evidence_policy_v1"
+                        if str(baseline) in ("B4-Evidence", "B4_Evidence", "B3-Evidence")
+                        else None
+                    )
                 )
             ),
             "lease_ttl_s": getattr(controller, "lease_ttl_s", None)

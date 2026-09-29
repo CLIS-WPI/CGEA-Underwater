@@ -1,0 +1,19 @@
+# E4 DEV-sanity only. Frozen budgets. Do not retune. Do not run TEST seeds.
+name: e4_dev_sanity
+dev_seeds: [0, 1, 2, 3, 4]
+forbid_trace_generation: true
+authority_epoch_s: 180.0
+outage_start_s: 200.0
+outage_end_s: 1200.0
+proposer_id: auv_06
+target_auv: auv_05
+cells: [A, B, C, D, E, F]
+
+e2_authority_age_context:
+  enabled: true
+  scenario_id: e4_dev_sanity_v1
+  authority_epoch_s: 180.0
+  proposer_id: auv_06
+  target_auv: auv_05
+  outage_start_s: 200.0
+  outage_end_s: 1200.0

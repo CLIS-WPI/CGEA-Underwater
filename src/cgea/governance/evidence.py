@@ -499,6 +499,29 @@ def apply_trusted_remote_update(
     )
 
 
+def apply_trusted_peer_only(
+    store: EvidenceStore,
+    *,
+    target_auv: str,
+    peer_failed: bool,
+    trusted_at: float,
+    version: int,
+    source: str = "peer_status_packet",
+) -> None:
+    """Comms-event refresh of PEER_AVAILABILITY only. Does not touch SEGMENT_ASSIGNMENT."""
+    store.put(
+        EvidenceRecord(
+            evidence_type=EvidenceType.PEER_AVAILABILITY,
+            value={"failed": bool(peer_failed)},
+            source=source,
+            observed_at=trusted_at,
+            trusted_at=trusted_at,
+            object_id=target_auv,
+            version=version,
+        )
+    )
+
+
 def next_remote_version(store: EvidenceStore, evidence_type: EvidenceType, object_id: str) -> int:
     rec = store.get_latest(evidence_type, object_id)
     return 1 if rec is None else int(rec.version) + 1
