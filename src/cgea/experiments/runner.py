@@ -364,6 +364,8 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         f.value: {"proposed": 0, "ALLOW": 0, "DENY": 0, "DEFER": 0} for f in AuthorityFreshness
     }
     denied_consequential_log: list[dict[str, Any]] = []
+    log_cons = bool(cfg.experiment.get("log_consequential_decisions", False))
+    cons_decision_log: list[dict[str, Any]] = []
     timeline_auv = str(cfg.mission.get("timeline_auv_id", "auv_08"))
     authority_timeline: list[dict[str, Any]] = []
     freshness_policy = controller.governor.freshness_policy
@@ -623,6 +625,12 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     _bump(coverage_by_conn[conn.value], dec)
                     _bump(coverage_by_fresh[freshness.value], dec)
 
+                ur_before = int(world.useful_reassignment_count)
+                dup_before = int(world.duplicate_work_count)
+                anom_before = sum(1 for a in world.anomalies.values() if a.get("resolved"))
+                miss_before = sum(
+                    1 for s in world.segments.values() if s.mandatory and (not s.completed or s.abandoned)
+                )
                 if result.decision == GovernorDecision.ALLOW:
                     decisions_allow += 1
                     adapter.execute(world, proposal)
@@ -661,6 +669,36 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                         )
                         if label.false_denial_if_denied:
                             false_denials += 1
+
+                if log_cons and proposal.risk_class == RiskClass.CONSEQUENTIAL:
+                    cons_decision_log.append(
+                        {
+                            "time_s": float(env.now),
+                            "auv": aid,
+                            "action": atype,
+                            "target_auv": proposal.parameters.get("target_auv"),
+                            "segment_id": proposal.parameters.get("segment_id"),
+                            "decision": dec,
+                            "reason_code": result.reason_code.value,
+                            "freshness": freshness.value,
+                            "connectivity": conn.value,
+                            "mission_beneficial": None if label is None else bool(label.mission_beneficial),
+                            "violates_frozen_risk": None if label is None else bool(label.violates_frozen_risk),
+                            "useful_reassignment_delta": int(world.useful_reassignment_count) - ur_before,
+                            "duplicate_work_delta": int(world.duplicate_work_count) - dup_before,
+                            "anomaly_resolved_delta": sum(
+                                1 for a in world.anomalies.values() if a.get("resolved")
+                            )
+                            - anom_before,
+                            "missed_mandatory_delta": sum(
+                                1
+                                for s in world.segments.values()
+                                if s.mandatory and (not s.completed or s.abandoned)
+                            )
+                            - miss_before,
+                            "rationale": proposal.rationale,
+                        }
+                    )
 
                 if aid == timeline_auv:
                     authority_timeline.append(
@@ -826,6 +864,16 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             "conflict_events": sem["events"],
             "utility_without_conflict_penalty": ub_noc.utility,
             "reason_code_counts": reason_counts,
+            "ablation_variant": (
+                "b4_no_freshness_v1"
+                if str(baseline) in ("B4-NoFreshness", "B4_NoFreshness", "B4_no_freshness")
+                else None
+            ),
+            "useful_reassignment_count": int(world.useful_reassignment_count),
+            "duplicate_work_count": int(world.duplicate_work_count),
+            "missed_mandatory": int(ub.missed_mandatory),
+            "contradictory_reassignment": int(sem["by_kind"].get("contradictory_reassignment", 0)),
+            "consequential_decision_log": cons_decision_log,
             "recon_status": recon_status,
             "recon_latency_s": recon_latency,
             "doppler_mode": str(cfg.acoustic.get("doppler_mode", "not_modeled")),

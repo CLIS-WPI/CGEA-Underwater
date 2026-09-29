@@ -34,6 +34,7 @@ class BaselineId(str, enum.Enum):
     B2_UNRESTRICTED = "B2"
     B3_STATIC_BOUNDED = "B3"
     B4_CGEA = "B4"
+    B4_NO_FRESHNESS = "B4-NoFreshness"
     B5_ADAPTIVE = "B5"  # alias → nominal
     B5_CONSERVATIVE = "B5_conservative"
     B5_NOMINAL = "B5_nominal"
@@ -189,6 +190,35 @@ class B4CGEA(BaselineController):
         )
 
 
+class B4NoFreshness(B4CGEA):
+    """Frozen ablation b4_no_freshness_v1: same B4 governor and risk taxonomy.
+
+    Authority age does not contract permissions. Hard-safety forbids and
+    conditional reassignment stay active. Does not bypass the governor.
+    """
+
+    baseline_id = BaselineId.B4_NO_FRESHNESS
+    ablation_variant = "b4_no_freshness_v1"
+
+    def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
+               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
+               violates_frozen_risk=False, conditional_ok=False):
+        return super().decide(
+            proposal,
+            connectivity,
+            capsule,
+            last_authority_update,
+            now,
+            energy,
+            supervisor_reachable,
+            position,
+            freshness_mode="disabled",
+            immediate_resume=immediate_resume,
+            violates_frozen_risk=violates_frozen_risk,
+            conditional_ok=conditional_ok,
+        )
+
+
 class B5AdaptiveAutonomy(BaselineController):
     """Connectivity-aware adaptive autonomy (no capsule / no independent governor / no provenance)."""
 
@@ -274,6 +304,9 @@ def make_baseline(baseline: str | BaselineId, planner: MissionPlanner, adapter: 
         return B5AdaptiveAutonomy(planner, adapter, variant="conservative")
     if key == "B5_permissive":
         return B5AdaptiveAutonomy(planner, adapter, variant="permissive")
+
+    if key in ("B4-NoFreshness", "B4_NoFreshness", "B4_no_freshness"):
+        return B4NoFreshness(planner, adapter)
 
     mapping = {
         "B1": B1Centralized,

@@ -306,10 +306,12 @@ class ExecutionGovernor:
     ) -> GovernorResult:
         age = authority_age(now, last_authority_update)
 
-        if now >= capsule.hard_expiry:
-            freshness = AuthorityFreshness.HARD_EXPIRED
-        elif freshness_mode == "disabled":
+        # Ablation b4_no_freshness_v1: skip all age/expiry contraction.
+        # B4 continuous mode is unchanged (hard expiry still applies).
+        if freshness_mode == "disabled":
             freshness = AuthorityFreshness.FRESH
+        elif now >= capsule.hard_expiry:
+            freshness = AuthorityFreshness.HARD_EXPIRED
         elif freshness_mode == "binary":
             freshness = (
                 AuthorityFreshness.HARD_EXPIRED

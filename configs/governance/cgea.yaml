@@ -4,6 +4,8 @@ hard_expiry_s: 900.0
 authority_refresh_s: 60.0
 authority_capsule_bytes: 256
 freshness_mode: continuous  # continuous | binary | disabled
+# Ablation b4_no_freshness_v1 is baseline B4-NoFreshness only (governor
+# freshness_mode=disabled). Do not change the thresholds below for B4.
 immediate_resume: false
 
 # Predeclared paper capsule grants (2026-09-28). Not an oracle copy, not a
