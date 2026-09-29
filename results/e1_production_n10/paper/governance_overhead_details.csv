@@ -1,0 +1,33 @@
+item,value,unit,source
+authority_capsule_bytes,256,bytes,configs/governance/cgea.yaml authority_capsule_bytes
+digest_bytes,128,bytes,configs/governance/cgea.yaml reconciliation.digest_bytes
+provenance_bytes,256,bytes,configs/governance/cgea.yaml reconciliation.provenance_bytes
+reconcile_bytes,128,bytes,configs/governance/cgea.yaml reconciliation.reconcile_bytes
+AUTHORITY_message_size,256,bytes,same as authority_capsule_bytes (AUTHORITY packets)
+authority_refresh_s,60,s,configs/governance/cgea.yaml authority_refresh_s
+reconciliation_packet_counts,,,not logged per type in production extras
+B4_governance_tx_bytes_mean_outage_0,71227.73333333334,bytes,e1_production_n10 raw n=30
+B4_mission_tx_bytes_mean_outage_0,23240.0,bytes,e1_production_n10 raw n=30
+B4_total_tx_bytes_mean_outage_0,94467.73333333334,bytes,e1_production_n10 raw n=30
+B4_gco_mean_outage_0,0.7382956531639217,ratio,e1_production_n10 raw n=30
+B4_governance_tx_bytes_mean_outage_150,74436.26666666666,bytes,e1_production_n10 raw n=30
+B4_mission_tx_bytes_mean_outage_150,26824.0,bytes,e1_production_n10 raw n=30
+B4_total_tx_bytes_mean_outage_150,101260.26666666666,bytes,e1_production_n10 raw n=30
+B4_gco_mean_outage_150,0.7167547433898427,ratio,e1_production_n10 raw n=30
+B4_governance_tx_bytes_mean_outage_300,72537.6,bytes,e1_production_n10 raw n=30
+B4_mission_tx_bytes_mean_outage_300,29960.0,bytes,e1_production_n10 raw n=30
+B4_total_tx_bytes_mean_outage_300,102497.6,bytes,e1_production_n10 raw n=30
+B4_gco_mean_outage_300,0.690522816274686,ratio,e1_production_n10 raw n=30
+B4_governance_tx_bytes_mean_outage_500,64537.6,bytes,e1_production_n10 raw n=30
+B4_mission_tx_bytes_mean_outage_500,34440.0,bytes,e1_production_n10 raw n=30
+B4_total_tx_bytes_mean_outage_500,98977.6,bytes,e1_production_n10 raw n=30
+B4_gco_mean_outage_500,0.6381203068523115,ratio,e1_production_n10 raw n=30
+B4_governance_tx_bytes_mean_outage_750,59063.46666666667,bytes,e1_production_n10 raw n=30
+B4_mission_tx_bytes_mean_outage_750,40264.0,bytes,e1_production_n10 raw n=30
+B4_total_tx_bytes_mean_outage_750,99327.46666666666,bytes,e1_production_n10 raw n=30
+B4_gco_mean_outage_750,0.5804303003417567,ratio,e1_production_n10 raw n=30
+B4_governance_tx_bytes_mean_outage_1000,51511.46666666667,bytes,e1_production_n10 raw n=30
+B4_mission_tx_bytes_mean_outage_1000,45640.0,bytes,e1_production_n10 raw n=30
+B4_total_tx_bytes_mean_outage_1000,97151.46666666666,bytes,e1_production_n10 raw n=30
+B4_gco_mean_outage_1000,0.5197632395462491,ratio,e1_production_n10 raw n=30
+B4_energy_communication_j_mean,98.94702222222224,J,B4 run JSON energy_communication_j (modeled; proxy from TX bytes in runner)

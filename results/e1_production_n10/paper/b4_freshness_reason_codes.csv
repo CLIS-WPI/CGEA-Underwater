@@ -1,0 +1,9 @@
+reason_code,count,attribution,note
+ALLOW_LOW_RISK,85784,low_risk_not_freshness,
+DENY_FORBIDDEN,60172,mixed_static_forbid_and_aging_strip,
+DENY_HARD_EXPIRY,2360,freshness_contraction_hard_expiry,
+DENY_RECOVERING_HARD_SAFETY,2144,connectivity_recovering_not_freshness,
+ALLOW_AUTHORIZED,600,fresh_conditional_or_allowed,
+DENY_CONDITIONAL_UNMET,140,static_conditional_rule_not_freshness,
+DENY_FORBIDDEN,48,inferred_aging_strip_of_reassign,"48 aging reassign denials; campaign DENY_CONDITIONAL_UNMET=140 equals fresh reassign denials, so these 48 are not conditional-unmet"
+ALLOW_AUTHORIZED,600,all_occur_in_fresh_only,coverage_by_fresh ALLOW=600 in fresh and 0 in aging/stale/hard_expired; all 600 are reassign_another_auv
