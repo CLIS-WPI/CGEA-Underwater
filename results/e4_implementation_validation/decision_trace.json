@@ -1,0 +1,38 @@
+{
+  "parent_design_sha": "4d2df2e95636c9a314083a54f33aa4d1a9fccd73",
+  "note": "Deterministic integration traces from tests/test_e4_integration.py. Not a campaign.",
+  "case_a_no_peer_refresh": [
+    {
+      "now": 400.0,
+      "peer_age_s": 220.0,
+      "assignment_age_s": 220.0,
+      "decision": "ALLOW",
+      "reason_code": "ALLOW_AUTHORIZED"
+    },
+    {
+      "now": 500.0,
+      "peer_age_s": 320.0,
+      "assignment_age_s": 320.0,
+      "decision": "DENY",
+      "reason_code": "DENY_STALE_EVIDENCE",
+      "stale_type": "PEER_AVAILABILITY"
+    }
+  ],
+  "case_b_peer_refresh_at_450_assignment_trusted_180": [
+    {
+      "now": 700.0,
+      "peer_age_s": 250.0,
+      "assignment_age_s": 520.0,
+      "decision": "ALLOW",
+      "reason_code": "ALLOW_AUTHORIZED"
+    },
+    {
+      "now": 800.0,
+      "peer_age_s": 350.0,
+      "assignment_age_s": 620.0,
+      "decision": "DENY",
+      "reason_code": "DENY_STALE_EVIDENCE",
+      "first_stale_type": "PEER_AVAILABILITY"
+    }
+  ]
+}

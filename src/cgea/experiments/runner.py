@@ -282,6 +282,24 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         planner.challenge_cohort = {f"auv_{i:02d}" for i in range(n_auvs // 2, n_auvs)}
     adapter = ExecutionAdapter()
     controller = make_baseline(baseline, planner, adapter)
+    evidence_mode = str(baseline) in (
+        "B4-Evidence",
+        "B4_Evidence",
+        "B3-Evidence",
+        "B3_Evidence",
+    ) or str(cfg.governance.get("authority_mode", "")) == "evidence"
+    evidence_policy = None
+    evidence_stores: dict[str, Any] = {}
+    evidence_local_ver: dict[str, int] = {}
+    if evidence_mode:
+        from cgea.governance.evidence import EvidenceStore, load_action_evidence_policy
+
+        evidence_policy = load_action_evidence_policy(
+            Path(cfg.paths.root) / "configs" / "governance" / "action_evidence_policy_v1.yaml"
+        )
+        evidence_stores = {aid: EvidenceStore() for aid in node_ids if not world.auvs[aid].is_gateway}
+        evidence_local_ver = {aid: 0 for aid in evidence_stores}
+
     if str(baseline) in ("B4-FixedExpiry", "B4_FixedExpiry", "B4_fixed_expiry"):
         ttl_raw = None
         if e2_cfg is not None:
@@ -456,6 +474,19 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 last_auth[pid] = float(e2_state["epoch"])
                 e2_state["capsule_id"] = capsules[pid].capsule_id
                 e2_state["epoch_done"] = True
+                if evidence_mode:
+                    from cgea.governance.evidence import populate_from_trusted_snapshot
+
+                    populate_from_trusted_snapshot(
+                        evidence_stores[pid],
+                        proposer_id=pid,
+                        snapshot=snap,
+                        energy=world.auvs[pid].energy,
+                        position=world.auvs[pid].position,
+                        observations=dict(world.auvs[pid].local_observations),
+                        version=1,
+                    )
+                    evidence_local_ver[pid] = 1
             if (
                 e2_on
                 and e2_recovers_globally(str(e2_state["context"]))
@@ -543,6 +574,25 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                             grants=capsule_grants,
                         )
                         last_auth[aid] = env.now
+                        if evidence_mode:
+                            from cgea.governance.evidence import refresh_known_remote_from_supervisor_view
+
+                            refresh_known_remote_from_supervisor_view(
+                                evidence_stores[aid],
+                                peer_failed_by_id={
+                                    x: (x in world.failed_auv_ids) for x in world.auvs if not world.auvs[x].is_gateway
+                                },
+                                segments={
+                                    sid: {
+                                        "mandatory": bool(s.mandatory),
+                                        "incomplete": bool((not s.completed) and (not s.abandoned)),
+                                        "owner": s.owner,
+                                    }
+                                    for sid, s in world.segments.items()
+                                },
+                                trusted_at=float(env.now),
+                                source="recon",
+                            )
                         net.send(
                             Packet(
                                 packet_id=f"auth-reauth-{aid}-{t}",
@@ -616,6 +666,25 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                             grants=capsule_grants,
                         )
                         last_auth[aid] = env.now
+                        if evidence_mode:
+                            from cgea.governance.evidence import refresh_known_remote_from_supervisor_view
+
+                            refresh_known_remote_from_supervisor_view(
+                                evidence_stores[aid],
+                                peer_failed_by_id={
+                                    x: (x in world.failed_auv_ids) for x in world.auvs if not world.auvs[x].is_gateway
+                                },
+                                segments={
+                                    sid: {
+                                        "mandatory": bool(s.mandatory),
+                                        "incomplete": bool((not s.completed) and (not s.abandoned)),
+                                        "owner": s.owner,
+                                    }
+                                    for sid, s in world.segments.items()
+                                },
+                                trusted_at=float(env.now),
+                                source="authority_packet",
+                            )
                         pkt = Packet(
                             packet_id=f"auth-{aid}-{env.now}",
                             src=world.gateway_id,
@@ -646,6 +715,19 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     local_population=len(node_ids),
                 )
                 conn = classifier.classify(metrics, recovering=(aid in recovering_ids))
+                if evidence_mode and aid in evidence_stores:
+                    from cgea.governance.evidence import put_local_self
+
+                    evidence_local_ver[aid] = int(evidence_local_ver.get(aid, 0)) + 1
+                    put_local_self(
+                        evidence_stores[aid],
+                        auv_id=aid,
+                        now=float(env.now),
+                        energy=auv.energy,
+                        position=auv.position,
+                        observations=dict(auv.local_observations),
+                        version=evidence_local_ver[aid],
+                    )
                 _bump(connectivity_ticks, conn.value)
 
                 age_s = authority_age(env.now, last_auth[aid])
@@ -685,7 +767,10 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
 
                 cond_ok = False
                 if proposal.action_type.value == ActionType.REASSIGN_ANOTHER_AUV.value:
-                    if e2_on and e2_state.get("snapshot") and aid == e2_state.get("proposer"):
+                    if evidence_mode:
+                        # Recruits only. Predicates come from evaluate_requirements (local store).
+                        cond_ok = int(recruits_used.get(aid, 0)) < int(capsules[aid].max_neighbor_recruits)
+                    elif e2_on and e2_state.get("snapshot") and aid == e2_state.get("proposer"):
                         cond_ok = local_conditional_ok(
                             e2_state["snapshot"],
                             int(recruits_used.get(aid, 0)),
@@ -702,6 +787,13 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                             int(recruits_used.get(aid, 0)),
                             int(capsules[aid].max_neighbor_recruits),
                         )
+                ev_kwargs: dict[str, Any] = {}
+                if evidence_mode:
+                    ev_kwargs = {
+                        "authority_mode": "evidence",
+                        "evidence_store": evidence_stores[aid],
+                        "evidence_policy": evidence_policy,
+                    }
                 result = controller.decide(
                     proposal,
                     conn,
@@ -715,6 +807,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     immediate_resume=immediate_resume,
                     violates_frozen_risk=bool(label.violates_frozen_risk) if label is not None else False,
                     conditional_ok=cond_ok,
+                    **ev_kwargs,
                 )
                 _bump(reason_counts, result.reason_code.value)
 
@@ -813,6 +906,20 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                             )
                             - miss_before,
                             "rationale": proposal.rationale,
+                            "evidence_policy_id": result.evidence_policy_id,
+                            "evidence_evaluation": result.evidence_evaluation,
+                            "oracle_global_target_failed": (
+                                e2_state.get("target") in world.failed_auv_ids if e2_on else None
+                            ),
+                            "oracle_global_segment_owner": (
+                                world.segments[e2_state["segment_id"]].owner if e2_on else None
+                            ),
+                            "oracle_global_segment_incomplete": (
+                                (not world.segments[e2_state["segment_id"]].completed)
+                                and (not world.segments[e2_state["segment_id"]].abandoned)
+                                if e2_on
+                                else None
+                            ),
                         }
                     )
 

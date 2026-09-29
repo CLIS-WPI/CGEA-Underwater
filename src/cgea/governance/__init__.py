@@ -53,6 +53,10 @@ class ReasonCode(str, enum.Enum):
     DEFER_PARTITION = "DEFER_PARTITION"
     DENY_CONDITIONAL_UNMET = "DENY_CONDITIONAL_UNMET"
     DENY_LEASE_EXPIRED = "DENY_LEASE_EXPIRED"
+    DENY_MISSING_EVIDENCE = "DENY_MISSING_EVIDENCE"
+    DENY_STALE_EVIDENCE = "DENY_STALE_EVIDENCE"
+    DENY_INVALID_EVIDENCE = "DENY_INVALID_EVIDENCE"
+    DEFER_EVIDENCE_REFRESH = "DEFER_EVIDENCE_REFRESH"
     DEFER_DEGRADED = "DEFER_DEGRADED"
     DEFER_AWAITING_SUPERVISOR = "DEFER_AWAITING_SUPERVISOR"
 
@@ -283,6 +287,8 @@ class GovernorResult(CgeaBaseModel):
     connectivity: ConnectivityState
     freshness: AuthorityFreshness | None = None
     detail: str = ""
+    evidence_policy_id: str | None = None
+    evidence_evaluation: dict[str, Any] | None = None
 
 
 class ExecutionGovernor:
@@ -304,7 +310,24 @@ class ExecutionGovernor:
         freshness_mode: str = "continuous",  # continuous | binary | disabled
         violates_frozen_risk: bool = False,
         conditional_ok: bool = False,
+        authority_mode: str = "cgea",
+        evidence_store: Any = None,
+        evidence_policy: Any = None,
     ) -> GovernorResult:
+        if authority_mode == "evidence":
+            return self._decide_evidence(
+                proposal,
+                connectivity,
+                capsule,
+                last_authority_update,
+                now,
+                energy,
+                position,
+                violates_frozen_risk=violates_frozen_risk,
+                conditional_ok=conditional_ok,
+                evidence_store=evidence_store,
+                evidence_policy=evidence_policy,
+            )
         age = authority_age(now, last_authority_update)
 
         # Ablation b4_no_freshness_v1: skip all age/expiry contraction.
@@ -455,6 +478,181 @@ class ExecutionGovernor:
             eff.capsule_id,
         )
 
+    def _decide_evidence(
+        self,
+        proposal: ActionProposal,
+        connectivity: ConnectivityState,
+        capsule: AuthorityCapsule,
+        last_authority_update: float,
+        now: float,
+        energy: EnergyState,
+        position: dict[str, float] | None,
+        *,
+        violates_frozen_risk: bool,
+        conditional_ok: bool,
+        evidence_store: Any,
+        evidence_policy: Any,
+    ) -> GovernorResult:
+        """B3: static forbid → grants → evidence → conditional. No 180/400/900, no DENY_HARD_EXPIRY."""
+        from cgea.governance.evidence import evaluate_requirements
+
+        if evidence_store is None or evidence_policy is None:
+            raise ValueError("B3 evidence mode requires evidence_store and evidence_policy")
+        if evidence_policy.apply_cgea_multistage_contraction:
+            raise ValueError("B3 must not apply CGEA multistage contraction")
+        if evidence_policy.apply_capsule_hard_expiry_deny:
+            raise ValueError("B3 must not apply capsule hard-expiry deny")
+
+        freshness = AuthorityFreshness.FRESH
+        eff = capsule
+        ev_dump: dict[str, Any] | None = None
+
+        if connectivity == ConnectivityState.RECOVERING and proposal.risk_class == RiskClass.CONSEQUENTIAL:
+            if violates_frozen_risk:
+                return self._log(
+                    GovernorDecision.DENY,
+                    ReasonCode.DENY_RECOVERING_HARD_SAFETY,
+                    proposal,
+                    connectivity,
+                    freshness,
+                    eff.capsule_id,
+                    evidence_policy_id=evidence_policy.policy_id,
+                )
+            return self._log(
+                GovernorDecision.DEFER,
+                ReasonCode.DEFER_RECOVERING_PENDING_REAUTH,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+                evidence_policy_id=evidence_policy.policy_id,
+            )
+
+        action = proposal.action_type.value
+        if action in eff.forbidden_actions:
+            return self._log(
+                GovernorDecision.DENY,
+                ReasonCode.DENY_FORBIDDEN,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+                evidence_policy_id=evidence_policy.policy_id,
+            )
+
+        ev = evaluate_requirements(proposal, evidence_store, now, evidence_policy)
+        ev_dump = ev.model_dump(mode="json")
+        if not ev.passed:
+            try:
+                rc = ReasonCode(ev.reason_code)
+            except ValueError:
+                rc = ReasonCode.DENY_INVALID_EVIDENCE
+            return self._log(
+                GovernorDecision.DENY,
+                rc,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+                evidence_policy_id=evidence_policy.policy_id,
+                evidence_evaluation=ev_dump,
+            )
+
+        if proposal.confidence < eff.minimum_confidence:
+            return self._log(
+                GovernorDecision.DENY,
+                ReasonCode.DENY_CONFIDENCE,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+                evidence_policy_id=evidence_policy.policy_id,
+                evidence_evaluation=ev_dump,
+            )
+        if proposal.expected_energy_cost_j > eff.max_extra_energy:
+            return self._log(
+                GovernorDecision.DENY,
+                ReasonCode.DENY_ENERGY,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+                evidence_policy_id=evidence_policy.policy_id,
+                evidence_evaluation=ev_dump,
+            )
+        if position and eff.geofence:
+            x, y = position.get("x", 0.0), position.get("y", 0.0)
+            if not (
+                eff.geofence.get("x_min", -1e9) <= x <= eff.geofence.get("x_max", 1e9)
+                and eff.geofence.get("y_min", -1e9) <= y <= eff.geofence.get("y_max", 1e9)
+            ):
+                return self._log(
+                    GovernorDecision.DENY,
+                    ReasonCode.DENY_GEOFENCE,
+                    proposal,
+                    connectivity,
+                    freshness,
+                    eff.capsule_id,
+                    evidence_policy_id=evidence_policy.policy_id,
+                    evidence_evaluation=ev_dump,
+                )
+
+        if proposal.risk_class == RiskClass.LOW:
+            return self._log(
+                GovernorDecision.ALLOW,
+                ReasonCode.ALLOW_LOW_RISK,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+                evidence_policy_id=evidence_policy.policy_id,
+                evidence_evaluation=ev_dump,
+            )
+
+        if action in eff.conditional_actions:
+            if not conditional_ok:
+                return self._log(
+                    GovernorDecision.DENY,
+                    ReasonCode.DENY_CONDITIONAL_UNMET,
+                    proposal,
+                    connectivity,
+                    freshness,
+                    eff.capsule_id,
+                    evidence_policy_id=evidence_policy.policy_id,
+                    evidence_evaluation=ev_dump,
+                )
+            return self._log(
+                GovernorDecision.ALLOW,
+                ReasonCode.ALLOW_AUTHORIZED,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+                evidence_policy_id=evidence_policy.policy_id,
+                evidence_evaluation=ev_dump,
+            )
+        if action in eff.allowed_actions:
+            return self._log(
+                GovernorDecision.ALLOW,
+                ReasonCode.ALLOW_AUTHORIZED,
+                proposal,
+                connectivity,
+                freshness,
+                eff.capsule_id,
+                evidence_policy_id=evidence_policy.policy_id,
+                evidence_evaluation=ev_dump,
+            )
+        return self._log(
+            GovernorDecision.DENY,
+            ReasonCode.DENY_FORBIDDEN,
+            proposal,
+            connectivity,
+            freshness,
+            eff.capsule_id,
+            evidence_policy_id=evidence_policy.policy_id,
+            evidence_evaluation=ev_dump,
+        )
+
     def _log(
         self,
         decision: GovernorDecision,
@@ -463,6 +661,9 @@ class ExecutionGovernor:
         connectivity: ConnectivityState,
         freshness: AuthorityFreshness | None,
         capsule_id: str | None,
+        evidence_policy_id: str | None = None,
+        evidence_evaluation: dict[str, Any] | None = None,
+        detail: str = "",
     ) -> GovernorResult:
         result = GovernorResult(
             decision=decision,
@@ -471,6 +672,9 @@ class ExecutionGovernor:
             effective_capsule_id=capsule_id,
             connectivity=connectivity,
             freshness=freshness,
+            detail=detail,
+            evidence_policy_id=evidence_policy_id,
+            evidence_evaluation=evidence_evaluation,
         )
         self.decision_log.append(result)
         return result

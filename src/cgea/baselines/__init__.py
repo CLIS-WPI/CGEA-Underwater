@@ -36,6 +36,7 @@ class BaselineId(str, enum.Enum):
     B4_CGEA = "B4"
     B4_NO_FRESHNESS = "B4-NoFreshness"
     B4_FIXED_EXPIRY = "B4-FixedExpiry"
+    B4_EVIDENCE = "B4-Evidence"
     B5_ADAPTIVE = "B5"  # alias → nominal
     B5_CONSERVATIVE = "B5_conservative"
     B5_NOMINAL = "B5_nominal"
@@ -72,6 +73,9 @@ class BaselineController:
         immediate_resume: bool = False,
         violates_frozen_risk: bool = False,
         conditional_ok: bool = False,
+        authority_mode: str = "cgea",
+        evidence_store=None,
+        evidence_policy=None,
     ) -> GovernorResult:
         raise NotImplementedError
 
@@ -174,7 +178,8 @@ class B4CGEA(BaselineController):
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
                supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
-               violates_frozen_risk=False, conditional_ok=False):
+               violates_frozen_risk=False, conditional_ok=False, authority_mode="cgea",
+               evidence_store=None, evidence_policy=None):
         if immediate_resume and connectivity == ConnectivityState.RECOVERING:
             connectivity = ConnectivityState.CONNECTED
         return self.governor.decide(
@@ -188,6 +193,9 @@ class B4CGEA(BaselineController):
             freshness_mode,
             violates_frozen_risk=violates_frozen_risk,
             conditional_ok=conditional_ok,
+            authority_mode=authority_mode,
+            evidence_store=evidence_store,
+            evidence_policy=evidence_policy,
         )
 
 
@@ -203,7 +211,8 @@ class B4NoFreshness(B4CGEA):
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
                supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
-               violates_frozen_risk=False, conditional_ok=False):
+               violates_frozen_risk=False, conditional_ok=False, authority_mode="cgea",
+               evidence_store=None, evidence_policy=None):
         return super().decide(
             proposal,
             connectivity,
@@ -217,6 +226,9 @@ class B4NoFreshness(B4CGEA):
             immediate_resume=immediate_resume,
             violates_frozen_risk=violates_frozen_risk,
             conditional_ok=conditional_ok,
+            authority_mode="cgea",
+            evidence_store=None,
+            evidence_policy=None,
         )
 
 
@@ -229,7 +241,8 @@ class B4FixedExpiry(B4NoFreshness):
 
     def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
                supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
-               violates_frozen_risk=False, conditional_ok=False):
+               violates_frozen_risk=False, conditional_ok=False, authority_mode="cgea",
+               evidence_store=None, evidence_policy=None):
         from cgea.governance import authority_age
         from cgea.mission import ActionType
 
@@ -259,6 +272,38 @@ class B4FixedExpiry(B4NoFreshness):
             immediate_resume=immediate_resume,
             violates_frozen_risk=violates_frozen_risk,
             conditional_ok=conditional_ok,
+            authority_mode="cgea",
+            evidence_store=None,
+            evidence_policy=None,
+        )
+
+
+class B4Evidence(B4CGEA):
+    """E4 B3: action-dependent evidence authority. Does not mutate B2 contraction."""
+
+    baseline_id = BaselineId.B4_EVIDENCE
+    ablation_variant = "action_evidence_policy_v1"
+
+    def decide(self, proposal, connectivity, capsule, last_authority_update, now, energy,
+               supervisor_reachable, position=None, freshness_mode="continuous", immediate_resume=False,
+               violates_frozen_risk=False, conditional_ok=False, authority_mode="evidence",
+               evidence_store=None, evidence_policy=None):
+        return super().decide(
+            proposal,
+            connectivity,
+            capsule,
+            last_authority_update,
+            now,
+            energy,
+            supervisor_reachable,
+            position,
+            freshness_mode="disabled",
+            immediate_resume=immediate_resume,
+            violates_frozen_risk=violates_frozen_risk,
+            conditional_ok=conditional_ok,
+            authority_mode="evidence",
+            evidence_store=evidence_store,
+            evidence_policy=evidence_policy,
         )
 
 
@@ -352,6 +397,8 @@ def make_baseline(baseline: str | BaselineId, planner: MissionPlanner, adapter: 
         return B4NoFreshness(planner, adapter)
     if key in ("B4-FixedExpiry", "B4_FixedExpiry", "B4_fixed_expiry"):
         return B4FixedExpiry(planner, adapter)
+    if key in ("B4-Evidence", "B4_Evidence", "B3-Evidence", "B3_Evidence"):
+        return B4Evidence(planner, adapter)
 
     mapping = {
         "B1": B1Centralized,
