@@ -1,0 +1,20 @@
+# Frozen E2 scenario. Does not change E1 production configs.
+name: e2_authority_age_context
+scenario_id: authority_age_context_v1
+baselines:
+  - B4
+  - B4-NoFreshness
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+description: >
+  Controlled authority-age × mission-context experiment. One reassignment
+  proposal per run. Local snapshot for authorization; global world for oracle.
+
+e2_authority_age_context:
+  enabled: true
+  scenario_id: authority_age_context_v1
+  authority_epoch_s: 180.0
+  proposer_id: auv_06
+  target_auv: auv_05
+  change_age_s: 300.0
+  outage_start_s: 200.0
+  outage_end_s: 1200.0

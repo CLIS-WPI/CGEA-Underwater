@@ -1,0 +1,17 @@
+context_mode,age_id,authority_age_s,baseline,n,controlled_safe_useful_execution_mean,controlled_safe_useful_execution_lo,controlled_safe_useful_execution_hi,obsolete_reassignment_execution_mean,obsolete_reassignment_execution_lo,obsolete_reassignment_execution_hi,controlled_reassignment_allowed_mean,controlled_false_denial_mean,ownership_override_mean,mission_utility_mean,mission_utility_lo,mission_utility_hi,hard_safety_violation_count_mean,safe_useful_retention_mean
+benign_static,fresh_120,120.0,B4,30,1.0,1.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,-43.03627666666666,-43.03704999999999,-43.03511666666665,0.0,1.0
+benign_static,fresh_120,120.0,B4-NoFreshness,30,1.0,1.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,-43.03763,-43.03765,-43.0376,0.0,1.0
+benign_static,aging_240,240.0,B4,30,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,-55.03627666666666,-55.03704999999999,-55.03511666666665,0.0,0.0
+benign_static,aging_240,240.0,B4-NoFreshness,30,1.0,1.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,-43.03763,-43.03765,-43.0376,0.0,1.0
+benign_static,stale_520,520.0,B4,30,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,-55.03627666666666,-55.03704999999999,-55.03511666666665,0.0,0.0
+benign_static,stale_520,520.0,B4-NoFreshness,30,1.0,1.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,-43.03763,-43.03765,-43.0376,0.0,1.0
+benign_static,hard_960,960.0,B4,30,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,-55.03627666666666,-55.03704999999999,-55.03511666666665,0.0,0.0
+benign_static,hard_960,960.0,B4-NoFreshness,30,1.0,1.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,-43.03763,-43.03765,-43.0376,0.0,1.0
+target_recovers_age300,fresh_120,120.0,B4,30,1.0,1.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,-43.03627666666666,-43.03704999999999,-43.03511666666665,0.0,1.0
+target_recovers_age300,fresh_120,120.0,B4-NoFreshness,30,1.0,1.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,-43.03763,-43.03765,-43.0376,0.0,1.0
+target_recovers_age300,aging_240,240.0,B4,30,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,-55.03627666666666,-55.03704999999999,-55.03511666666665,0.0,0.0
+target_recovers_age300,aging_240,240.0,B4-NoFreshness,30,1.0,1.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,-43.03763,-43.03765,-43.0376,0.0,1.0
+target_recovers_age300,stale_520,520.0,B4,30,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-55.03627666666666,-55.03704999999999,-55.03511666666665,0.0,0.0
+target_recovers_age300,stale_520,520.0,B4-NoFreshness,30,0.0,0.0,0.0,1.0,1.0,1.0,1.0,0.0,1.0,-55.03763,-55.03765,-55.0376,0.0,0.0
+target_recovers_age300,hard_960,960.0,B4,30,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-55.03627666666666,-55.03704999999999,-55.03511666666665,0.0,0.0
+target_recovers_age300,hard_960,960.0,B4-NoFreshness,30,0.0,0.0,0.0,1.0,1.0,1.0,1.0,0.0,1.0,-55.03763,-55.03765,-55.0376,0.0,0.0

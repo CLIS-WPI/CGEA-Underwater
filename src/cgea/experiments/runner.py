@@ -13,7 +13,17 @@ from omegaconf import DictConfig, OmegaConf
 
 from cgea.acoustic.bellhop import AcousticEnvironment, BellhopEngine, SoundSpeedProfile
 from cgea.acoustic.trace import ChannelTraceStore, generate_mission_trace
-from cgea.agent import ExecutionAdapter, MissionPlanner
+from cgea.agent import ActionProposal, ExecutionAdapter, MissionPlanner
+from cgea.experiments.e2_authority_age import (
+    AUTHORITY_EPOCH_S,
+    capture_snapshot,
+    controlled_reassign_proposal,
+    fail_target,
+    local_conditional_ok,
+    recover_target,
+    resolve_target_segment,
+    unfail_stress_targets,
+)
 from cgea.baselines import BaselineId, make_baseline
 from cgea.governance import (
     AuthorityFreshness,
@@ -259,8 +269,10 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         consequential_period_s=float(cfg.agent.consequential_period_s),
         seed=seed,
     )
+    e2_cfg = cfg.experiment.get("e2_authority_age_context")
+    e2_on = bool(e2_cfg and e2_cfg.get("enabled"))
     challenge_path = Path(cfg.paths.root) / "configs" / "mission" / "freshness_challenge.yaml"
-    if challenge_path.is_file():
+    if challenge_path.is_file() and not e2_on:
         ch = OmegaConf.load(challenge_path)
         planner.challenge_times_s = [float(x) for x in ch.get("proposal_times_s", [])]
         planner.challenge_cycle = [str(x) for x in ch.get("action_cycle", [])]
@@ -293,6 +305,31 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     }
     last_auth = {aid: 0.0 for aid in capsules}
     last_supervisor = {aid: 0.0 for aid in capsules}
+    e2_state: dict[str, Any] = {
+        "on": e2_on,
+        "snapshot": None,
+        "n_controlled": 0,
+        "event": None,
+        "epoch_done": False,
+        "change_done": False,
+    }
+    if e2_on:
+        proposer = str(e2_cfg.proposer_id)
+        target = str(e2_cfg.target_auv)
+        if proposer not in world.auvs or world.auvs[proposer].is_gateway:
+            raise RuntimeError(f"E2: proposer {proposer} missing")
+        if target not in world.auvs:
+            raise RuntimeError(f"E2: target {target} missing")
+        e2_state["proposer"] = proposer
+        e2_state["target"] = target
+        e2_state["segment_id"] = resolve_target_segment(world, target)
+        e2_state["epoch"] = float(e2_cfg.get("authority_epoch_s", AUTHORITY_EPOCH_S))
+        e2_state["challenge_time"] = float(e2_cfg.challenge_time_s)
+        e2_state["authority_age"] = float(e2_cfg.authority_age_s)
+        e2_state["context"] = str(e2_cfg.context_mode)
+        e2_state["expected_freshness"] = str(e2_cfg.expected_freshness)
+        e2_state["change_time"] = float(e2_state["epoch"]) + float(e2_cfg.get("change_age_s", 300.0))
+        unfail_stress_targets(world, keep="")
     journals: dict[str, list[NodeJournalEntry]] = {aid: [] for aid in capsules}
 
     classifier = ConnectivityClassifier(
@@ -364,7 +401,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
         f.value: {"proposed": 0, "ALLOW": 0, "DENY": 0, "DEFER": 0} for f in AuthorityFreshness
     }
     denied_consequential_log: list[dict[str, Any]] = []
-    log_cons = bool(cfg.experiment.get("log_consequential_decisions", False))
+    log_cons = bool(cfg.experiment.get("log_consequential_decisions", False)) or e2_on
     cons_decision_log: list[dict[str, Any]] = []
     timeline_auv = str(cfg.mission.get("timeline_auv_id", "auv_08"))
     authority_timeline: list[dict[str, Any]] = []
@@ -384,6 +421,39 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
 
         while env.now < duration:
             t = env.now
+            if e2_on and (not e2_state["epoch_done"]) and t + 1e-9 >= e2_state["epoch"]:
+                fail_target(world, e2_state["target"])
+                snap = capture_snapshot(
+                    world,
+                    proposer_id=e2_state["proposer"],
+                    target_auv=e2_state["target"],
+                    segment_id=e2_state["segment_id"],
+                    t=e2_state["epoch"],
+                )
+                e2_state["snapshot"] = snap
+                pid = e2_state["proposer"]
+                capsules[pid] = issue_capsule(
+                    pid,
+                    world.mission_id,
+                    e2_state["epoch"],
+                    world.gateway_id,
+                    soft_h,
+                    hard_h,
+                    broad=False,
+                    grants=capsule_grants,
+                )
+                last_auth[pid] = float(e2_state["epoch"])
+                e2_state["capsule_id"] = capsules[pid].capsule_id
+                e2_state["epoch_done"] = True
+            if (
+                e2_on
+                and e2_state["context"] == "target_recovers_age300"
+                and (not e2_state["change_done"])
+                and t + 1e-9 >= e2_state["change_time"]
+            ):
+                recover_target(world, e2_state["target"])
+                e2_state["change_done"] = True
+                e2_state["ground_truth_change_time"] = float(e2_state["change_time"])
             if outage_start <= t < outage_end:
                 if partition_groups:
                     groups = [set(g) for g in partition_groups]
@@ -522,7 +592,8 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 auv.local_observations["_gw_reachable"] = gw_reach
                 if gw_reach:
                     last_supervisor[aid] = env.now
-                    if env.now - last_auth[aid] > float(cfg.governance.authority_refresh_s):
+                    skip_refresh = bool(e2_on and aid == e2_state.get("proposer"))
+                    if (not skip_refresh) and env.now - last_auth[aid] > float(cfg.governance.authority_refresh_s):
                         capsules[aid] = issue_capsule(
                             aid,
                             world.mission_id,
@@ -573,6 +644,19 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     freshness = classify_freshness(age_s, capsules[aid], freshness_policy)
 
                 proposal = planner.propose(world, aid)
+                if e2_on:
+                    is_challenge = abs(t - float(e2_state["challenge_time"])) < 1e-9
+                    if aid == e2_state["proposer"] and is_challenge:
+                        if e2_state["snapshot"] is None:
+                            raise RuntimeError("E2: snapshot missing at challenge")
+                        proposal = controlled_reassign_proposal(world, e2_state["snapshot"])
+                        e2_state["n_controlled"] += 1
+                    elif aid == e2_state["proposer"]:
+                        proposal = planner._hold(auv, "e2_wait_controlled")
+                    elif aid == e2_state["target"]:
+                        proposal = planner._hold(auv, "e2_hold_target")
+                    elif proposal.action_type == ActionType.REASSIGN_ANOTHER_AUV:
+                        proposal = planner._hold(auv, "e2_block_extra_reassign")
                 atype = proposal.action_type.value
                 risk_key = "consequential" if proposal.risk_class == RiskClass.CONSEQUENTIAL else "low"
                 _bump(proposed_by_type, atype)
@@ -590,16 +674,23 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
 
                 cond_ok = False
                 if proposal.action_type.value == ActionType.REASSIGN_ANOTHER_AUV.value:
-                    seg_id = proposal.parameters.get("segment_id")
-                    seg = world.segments.get(seg_id) if seg_id else None
-                    cond_ok = reassign_condition_satisfied(
-                        proposal,
-                        world.failed_auv_ids,
-                        bool(seg and seg.mandatory),
-                        bool(seg and (not seg.completed) and (not seg.abandoned)),
-                        int(recruits_used.get(aid, 0)),
-                        int(capsules[aid].max_neighbor_recruits),
-                    )
+                    if e2_on and e2_state.get("snapshot") and aid == e2_state.get("proposer"):
+                        cond_ok = local_conditional_ok(
+                            e2_state["snapshot"],
+                            int(recruits_used.get(aid, 0)),
+                            int(capsules[aid].max_neighbor_recruits),
+                        )
+                    else:
+                        seg_id = proposal.parameters.get("segment_id")
+                        seg = world.segments.get(seg_id) if seg_id else None
+                        cond_ok = reassign_condition_satisfied(
+                            proposal,
+                            world.failed_auv_ids,
+                            bool(seg and seg.mandatory),
+                            bool(seg and (not seg.completed) and (not seg.abandoned)),
+                            int(recruits_used.get(aid, 0)),
+                            int(capsules[aid].max_neighbor_recruits),
+                        )
                 result = controller.decide(
                     proposal,
                     conn,
@@ -631,6 +722,20 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                 miss_before = sum(
                     1 for s in world.segments.values() if s.mandatory and (not s.completed or s.abandoned)
                 )
+                util_before = None
+                owner_before = None
+                e2_global_before: dict[str, Any] | None = None
+                if e2_on and proposal.rationale == "e2_controlled_reassign":
+                    util_before = float(world_utility(world, unresolved_conflicts=0).utility)
+                    sid = e2_state["segment_id"]
+                    gseg_b = world.segments[sid]
+                    owner_before = gseg_b.owner
+                    e2_global_before = {
+                        "global_target_failed": e2_state["target"] in world.failed_auv_ids,
+                        "global_segment_mandatory": bool(gseg_b.mandatory),
+                        "global_segment_incomplete": bool((not gseg_b.completed) and (not gseg_b.abandoned)),
+                        "global_segment_owner": gseg_b.owner,
+                    }
                 if result.decision == GovernorDecision.ALLOW:
                     decisions_allow += 1
                     adapter.execute(world, proposal)
@@ -699,6 +804,91 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                             "rationale": proposal.rationale,
                         }
                     )
+
+                if e2_on and proposal.rationale == "e2_controlled_reassign":
+                    snap = e2_state["snapshot"]
+                    executed = result.decision == GovernorDecision.ALLOW
+                    gseg = world.segments[e2_state["segment_id"]]
+                    owner_after = gseg.owner
+                    gb = e2_global_before or {}
+                    global_failed = bool(gb.get("global_target_failed", e2_state["target"] in world.failed_auv_ids))
+                    override = bool(
+                        executed and (not global_failed) and owner_after != e2_state["target"]
+                    )
+                    beneficial = bool(label.mission_beneficial) if label is not None else False
+                    violates = bool(label.violates_frozen_risk) if label is not None else False
+                    safe_useful = int(executed and beneficial and not violates)
+                    obsolete = int(executed and cond_ok and (not beneficial))
+                    allowed = int(executed)
+                    false_denial = int(
+                        (not executed)
+                        and beneficial
+                        and (not violates)
+                    )
+                    util_after = float(world_utility(world, unresolved_conflicts=0).utility)
+                    e2_state["event"] = {
+                        "authority_epoch_s": float(e2_state["epoch"]),
+                        "challenge_time_s": float(e2_state["challenge_time"]),
+                        "authority_age_s": float(e2_state["authority_age"]),
+                        "expected_freshness_band": str(e2_state["expected_freshness"]),
+                        "actual_freshness_band": freshness.value,
+                        "proposer_id": e2_state["proposer"],
+                        "target_auv": e2_state["target"],
+                        "segment_id": e2_state["segment_id"],
+                        "capsule_id": e2_state.get("capsule_id"),
+                        "snapshot_timestamp": snap["captured_at"],
+                        "last_authority_update_s": float(last_auth[aid]),
+                        "local_target_failed": bool(snap["target_failed"]),
+                        "local_segment_mandatory": bool(snap["segment_mandatory"]),
+                        "local_segment_incomplete": bool(snap["segment_incomplete"]),
+                        "local_segment_owner": snap["segment_owner"],
+                        "local_snapshot_time": float(snap["captured_at"]),
+                        "local_snapshot_age": float(env.now) - float(snap["captured_at"]),
+                        "local_snapshot_version": int(snap["snapshot_version"]),
+                        "global_target_failed": bool(global_failed),
+                        "global_segment_mandatory": bool(gb.get("global_segment_mandatory", gseg.mandatory)),
+                        "global_segment_incomplete": bool(
+                            gb.get(
+                                "global_segment_incomplete",
+                                (not gseg.completed) and (not gseg.abandoned),
+                            )
+                        ),
+                        "global_segment_owner": gb.get("global_segment_owner", owner_before),
+                        "global_state_changed": bool(e2_state.get("change_done")),
+                        "global_change_time": e2_state.get("ground_truth_change_time"),
+                        "baseline": str(baseline),
+                        "conditional_ok_local": bool(cond_ok),
+                        "decision": dec,
+                        "reason_code": result.reason_code.value,
+                        "connectivity_state": conn.value,
+                        "freshness_mode": (
+                            "disabled"
+                            if str(baseline) in ("B4-NoFreshness", "B4_NoFreshness", "B4_no_freshness")
+                            else freshness_mode
+                        ),
+                        "mission_beneficial": beneficial,
+                        "violates_frozen_risk": violates,
+                        "oracle_reason": None if label is None else label.reason,
+                        "executed": int(executed),
+                        "controlled_reassignment_allowed": allowed,
+                        "controlled_safe_useful_execution": safe_useful,
+                        "obsolete_reassignment_execution": obsolete,
+                        "controlled_false_denial": false_denial,
+                        "ownership_override_of_available_target": int(override),
+                        "useful_reassignment_delta": int(world.useful_reassignment_count) - ur_before,
+                        "duplicate_work_delta": int(world.duplicate_work_count) - dup_before,
+                        "contradictory_reassignment_delta": int(override),
+                        "missed_mandatory_delta": miss_before
+                        - sum(
+                            1
+                            for s in world.segments.values()
+                            if s.mandatory and (not s.completed or s.abandoned)
+                        ),
+                        "utility_before": util_before,
+                        "utility_after": util_after,
+                        "owner_before": owner_before,
+                        "owner_after": owner_after,
+                    }
 
                 if aid == timeline_auv:
                     authority_timeline.append(
@@ -777,6 +967,13 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
 
     env.process(mission_loop())
     env.run(until=duration)
+    if e2_on:
+        if int(e2_state["n_controlled"]) != 1:
+            raise RuntimeError(
+                f"E2: expected exactly 1 controlled reassignment proposal, got {e2_state['n_controlled']}"
+            )
+        if e2_state.get("event") is None:
+            raise RuntimeError("E2: controlled event was not logged")
 
     acc = net.total_bytes()
     governance_bytes = int(acc["governance_tx"])
@@ -924,6 +1121,12 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             "allow_fallback": False,
             "use_sionna_bridge": True,
             "sionna_device": store.load_meta(trace.trace_id).get("sionna_device"),
+            "e2_scenario_id": "authority_age_context_v1" if e2_on else None,
+            "e2_n_controlled_proposals": int(e2_state["n_controlled"]) if e2_on else 0,
+            "e2_context_mode": e2_state.get("context") if e2_on else None,
+            "e2_authority_epoch_s": e2_state.get("epoch") if e2_on else None,
+            "e2_capsule_id": e2_state.get("capsule_id") if e2_on else None,
+            "e2_controlled_event": e2_state.get("event") if e2_on else None,
         },
     )
     out_dir = Path(cfg.paths.results) / str(cfg.experiment.name) / baseline

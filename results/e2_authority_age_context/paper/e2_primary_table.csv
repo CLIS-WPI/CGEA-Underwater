@@ -1,0 +1,9 @@
+context_mode,age_id,authority_age_s,B4_safe_useful,B4_obsolete,B4-NoFreshness_safe_useful,B4-NoFreshness_obsolete,delta_safe_useful_B4_minus_NF,delta_safe_useful_ci95_lo,delta_safe_useful_ci95_hi,delta_obsolete_B4_minus_NF,delta_obsolete_ci95_lo,delta_obsolete_ci95_hi
+benign_static,fresh_120,120.0,1.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+benign_static,aging_240,240.0,0.0,0.0,1.0,0.0,-1.0,-1.0,-1.0,0.0,0.0,0.0
+benign_static,stale_520,520.0,0.0,0.0,1.0,0.0,-1.0,-1.0,-1.0,0.0,0.0,0.0
+benign_static,hard_960,960.0,0.0,0.0,1.0,0.0,-1.0,-1.0,-1.0,0.0,0.0,0.0
+target_recovers_age300,fresh_120,120.0,1.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+target_recovers_age300,aging_240,240.0,0.0,0.0,1.0,0.0,-1.0,-1.0,-1.0,0.0,0.0,0.0
+target_recovers_age300,stale_520,520.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,-1.0,-1.0,-1.0
+target_recovers_age300,hard_960,960.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,-1.0,-1.0,-1.0
