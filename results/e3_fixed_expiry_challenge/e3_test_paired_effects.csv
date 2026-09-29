@@ -1,0 +1,7 @@
+metric,b4_minus_fixed_expiry_mean,ci95_lo,ci95_hi,n_clusters
+useful_valid_execution,-0.55,-0.55,-0.55,15
+obsolete_execution,-0.31818181818181823,-0.31818181818181823,-0.31818181818181823,15
+ownership_override,-0.31818181818181823,-0.31818181818181823,-0.31818181818181823,15
+mission_utility,-3.1415038095237935,-3.142257142857126,-3.139997142857129,15
+hard_safety_violation_count,0.0,0.0,0.0,15
+governance_airtime_s,0.0,0.0,0.0,15

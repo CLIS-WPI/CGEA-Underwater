@@ -1,3 +1,5 @@
-# E3 sanity PASSED
+# E3 TEST validation
 
-TTL infinity matched NoFreshness on the checked cell; B4 age 180 is AGING.
+n_runs=1890
+CASE E3-DIFFERENTIATED
+E1/E2/E2-F manifests unchanged at start of phase.
