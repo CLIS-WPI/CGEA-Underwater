@@ -2,7 +2,7 @@
 
 - parent_sha: `fb37529d60815d33822aa71b030845a2b8ad1bbc`
 - ttl_selection_commit: `41ac1632b2376f766a3380a44fe84164b4996c8d`
-- git_commit: `PENDING_TEST_COMMIT`
+- git_commit: `d1fca3cb3b061c4b77a8ca766d5300ebde6a024b`
 - campaign: `e3_fixed_expiry_challenge`
 - n_dev_runs: 5040
 - n_test_runs: 1890 (expect 1890 = 15 clusters × 6 contexts × 7 ages × 3 methods)
