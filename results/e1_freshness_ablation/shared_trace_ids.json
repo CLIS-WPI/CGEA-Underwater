@@ -1,0 +1,23 @@
+{
+  "paper_ssp_200m_v1": {
+    "0": "tr_54fb653caded_gpu",
+    "1": "tr_3bf719402f6c_gpu",
+    "2": "tr_0ab8a47a1225_gpu",
+    "3": "tr_f9f4d2c6f6d1_gpu",
+    "4": "tr_5bf96997e3af_gpu"
+  },
+  "paper_ssp_200m_moderate_v1": {
+    "0": "tr_e481a0d054ed_gpu",
+    "1": "tr_a88224c7b787_gpu",
+    "2": "tr_4370fea4680c_gpu",
+    "3": "tr_20211a97cb5f_gpu",
+    "4": "tr_6f36c0ce7c2d_gpu"
+  },
+  "paper_ssp_200m_strong_v1": {
+    "0": "tr_41578464d64c_gpu",
+    "1": "tr_6c0fce5b4aa8_gpu",
+    "2": "tr_e18b2f198ce8_gpu",
+    "3": "tr_90c59e32088b_gpu",
+    "4": "tr_d1ea9e6ed537_gpu"
+  }
+}
