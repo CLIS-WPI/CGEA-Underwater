@@ -96,20 +96,13 @@ def ensure_trace(cfg: DictConfig, world_positions: dict[str, Position3D]) -> Any
             raise PaperAssertionError("paper runs require acoustic.use_gpu_phy=true")
 
     store = ChannelTraceStore(Path(cfg.paths.traces))
-    engine = BellhopEngine(
-        _env_from_cfg(cfg),
-        prefer_aubellhop=bool(cfg.acoustic.get("prefer_aubellhop", True)),
-        allow_fallback=bool(cfg.acoustic.get("allow_fallback", False)),
-    )
-    if paper_run:
-        assert_aubellhop_backend(engine.backend)
-
+    env_ac = _env_from_cfg(cfg)
     duration = float(cfg.mission.duration_s)
     dt = float(cfg.mission.channel_sample_dt_s)
     times = list(np.arange(0.0, duration + 1e-9, dt))
     from cgea.acoustic.trace import make_trace_id
 
-    base_id = make_trace_id(engine.env.environment_id, int(cfg.seed), len(world_positions), duration)
+    base_id = make_trace_id(env_ac.environment_id, int(cfg.seed), len(world_positions), duration)
     trace_id = f"{base_id}_gpu" if use_gpu_phy else base_id
     meta_path = store.meta_path(trace_id)
     parquet_path = store.trace_path(trace_id)
@@ -132,6 +125,14 @@ def ensure_trace(cfg: DictConfig, world_positions: dict[str, Position3D]) -> Any
         if (not use_gpu_phy) and meta.get("gpu_phy"):
             raise PaperAssertionError(f"refusing to load GPU-PHY trace {trace_id} under legacy channel path")
         return store.load(trace_id)
+
+    engine = BellhopEngine(
+        env_ac,
+        prefer_aubellhop=bool(cfg.acoustic.get("prefer_aubellhop", True)),
+        allow_fallback=bool(cfg.acoustic.get("allow_fallback", False)),
+    )
+    if paper_run:
+        assert_aubellhop_backend(engine.backend)
 
     if use_gpu_phy:
         from cgea.acoustic.gpu_pipeline import generate_mission_trace_gpu
@@ -434,6 +435,8 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
     denied_consequential_log: list[dict[str, Any]] = []
     log_cons = bool(cfg.experiment.get("log_consequential_decisions", False)) or e2_on
     cons_decision_log: list[dict[str, Any]] = []
+    forensic_log_all = bool(cfg.experiment.get("forensic_log_all_decisions", False))
+    forensic_decision_log: list[dict[str, Any]] = []
     timeline_auv = str(cfg.mission.get("timeline_auv_id", "auv_08"))
     authority_timeline: list[dict[str, Any]] = []
     freshness_policy = controller.governor.freshness_policy
@@ -860,6 +863,22 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
                     **ev_kwargs,
                 )
                 _bump(reason_counts, result.reason_code.value)
+
+                if forensic_log_all:
+                    forensic_decision_log.append(
+                        {
+                            "t_s": float(t),
+                            "auv_id": aid,
+                            "action_type": atype,
+                            "risk_class": proposal.risk_class.value,
+                            "decision": result.decision.value,
+                            "reason_code": result.reason_code.value,
+                            "authority_freshness": freshness.value,
+                            "authority_age_s": float(age_s),
+                            "connectivity": conn.value,
+                            "supervisor_reachable": bool(gw_reach),
+                        }
+                    )
 
                 dec = result.decision.value
                 decision_by_type.setdefault(atype, {"ALLOW": 0, "DENY": 0, "DEFER": 0})
@@ -1304,6 +1323,7 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             "auv_timeout_ids": sorted(recon_timeout_ids),
             "auv_timeout_fraction": auv_timeout_fraction,
             "denied_consequential": denied_consequential_log[:200],
+            "forensic_decision_log": forensic_decision_log if forensic_log_all else [],
             "decisions_allow": decisions_allow,
             "decisions_deny": decisions_deny,
             "decisions_defer": decisions_defer,
