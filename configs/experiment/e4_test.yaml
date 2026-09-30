@@ -1,0 +1,23 @@
+# E4 held-out TEST. Frozen 40/60/60/300/600. Seeds 5–9 only.
+name: e4_test
+test_seeds: [5, 6, 7, 8, 9]
+forbid_trace_generation: true
+authority_epoch_s: 180.0
+outage_start_s: 200.0
+outage_end_s: 1200.0
+proposer_id: auv_06
+target_auv: auv_05
+lease_ttl_s: 400.0
+local_slice:
+  action: collision_avoidance
+  challenge_time_s: 1140.0
+  context_mode: benign_static
+
+e2_authority_age_context:
+  enabled: true
+  scenario_id: e4_test_v1
+  authority_epoch_s: 180.0
+  proposer_id: auv_06
+  target_auv: auv_05
+  outage_start_s: 200.0
+  outage_end_s: 1200.0

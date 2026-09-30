@@ -1,0 +1,13 @@
+contrast,metric,mean,ci95_lo,ci95_hi,n_clusters,ci_note
+B3-B1,useful_valid_execution,-0.14999999999999997,-0.14999999999999997,-0.14999999999999997,15,deterministic identity across the 15 held-out clusters
+B3-B1,obsolete_execution,-0.1363636363636364,-0.1363636363636364,-0.1363636363636364,15,deterministic identity across the 15 held-out clusters
+B3-B1,ownership_override,-0.1363636363636364,-0.1363636363636364,-0.1363636363636364,15,deterministic identity across the 15 held-out clusters
+B3-B1,hard_safety,0.0,0.0,0.0,15,deterministic identity across the 15 held-out clusters
+B3-B1,mission_utility,-0.8571428571428545,-0.8571428571428555,-0.8571428571428541,15,bootstrap
+B3-B1,governance_airtime_s,-1.8947806286936005e-15,-5.684341886080802e-15,0.0,15,bootstrap
+B3-B2,useful_valid_execution,0.40000000000000013,0.40000000000000013,0.40000000000000013,15,deterministic identity across the 15 held-out clusters
+B3-B2,obsolete_execution,0.18181818181818177,0.18181818181818177,0.18181818181818177,15,deterministic identity across the 15 held-out clusters
+B3-B2,ownership_override,0.18181818181818177,0.18181818181818177,0.18181818181818177,15,deterministic identity across the 15 held-out clusters
+B3-B2,hard_safety,0.0,0.0,0.0,15,deterministic identity across the 15 held-out clusters
+B3-B2,mission_utility,2.284360952380939,2.2828542857142735,2.285114285714272,15,bootstrap
+B3-B2,governance_airtime_s,0.0,0.0,0.0,15,deterministic identity across the 15 held-out clusters
