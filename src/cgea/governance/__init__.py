@@ -115,6 +115,8 @@ def reassign_condition_satisfied(
 # Predeclared 2026-09-28. Not derived from the evaluation oracle.
 # Replaces implicit broad=True issuance used in E1-v3 diagnostic.
 PAPER_POLICY_VERSION = "paper_risk_bounded_v1_2026-09-28"
+# v2 differs from v1 ONLY in HARD_EXPIRED handling of LOW_RISK actions.
+PAPER_POLICY_VERSION_V2 = "paper_risk_bounded_v2_2026-09-30"
 PAPER_CONDITIONAL_ACTIONS = (ActionType.REASSIGN_ANOTHER_AUV.value,)
 PAPER_FORBIDDEN_ACTIONS = (
     ActionType.ENTER_EXCLUSION_ZONE.value,
@@ -191,6 +193,9 @@ class FreshnessPolicy(CgeaBaseModel):
     stale_allowed_actions: list[str] = Field(
         default_factory=lambda: [a.value for a in LOW_RISK_ACTIONS]
     )
+    # v1 False: HARD_EXPIRED keeps only fallback_action.
+    # v2 True: HARD_EXPIRED keeps LOW_RISK ∪ fallback; consequential still denied.
+    hard_expiry_keep_low_risk: bool = False
 
 
 def authority_age(now: float, last_trusted_authority_update: float) -> float:
@@ -210,6 +215,34 @@ def classify_freshness(age_s: float, capsule: AuthorityCapsule, policy: Freshnes
     return AuthorityFreshness.FRESH
 
 
+def is_paper_policy_v2(version: str) -> bool:
+    return str(version) == PAPER_POLICY_VERSION_V2
+
+
+def freshness_policy_for_version(version: str, freshness_cfg: Any | None = None) -> FreshnessPolicy:
+    """Select v1 vs v2 HARD_EXPIRED LOW_RISK handling. Thresholds unchanged."""
+    kwargs: dict[str, Any] = {"hard_expiry_keep_low_risk": is_paper_policy_v2(version)}
+    if freshness_cfg is not None:
+        aging = freshness_cfg.get("aging_age_s")
+        stale = freshness_cfg.get("stale_age_s")
+        if aging is not None:
+            kwargs["aging_age_s"] = float(aging)
+        if stale is not None:
+            kwargs["stale_age_s"] = float(stale)
+    return FreshnessPolicy(**kwargs)
+
+
+def _hard_expired_v2_sets(capsule: AuthorityCapsule) -> dict[str, Any]:
+    allowed = sorted({a.value for a in LOW_RISK_ACTIONS} | {capsule.fallback_action})
+    forbidden = sorted({a.value for a in CONSEQUENTIAL_ACTIONS} | set(PAPER_FORBIDDEN_ACTIONS))
+    return {
+        "allowed_actions": allowed,
+        "conditional_actions": [],
+        "forbidden_actions": forbidden,
+        "risk_ceiling": "low",
+    }
+
+
 def contract_capsule(
     capsule: AuthorityCapsule,
     freshness: AuthorityFreshness,
@@ -219,6 +252,9 @@ def contract_capsule(
     """Apply contraction policy. Does not mutate original."""
     data = capsule.model_dump()
     if now >= capsule.hard_expiry or freshness == AuthorityFreshness.HARD_EXPIRED:
+        if policy.hard_expiry_keep_low_risk:
+            data.update(_hard_expired_v2_sets(capsule))
+            return AuthorityCapsule(**data)
         data["allowed_actions"] = [capsule.fallback_action]
         data["conditional_actions"] = []
         data["forbidden_actions"] = [a.value for a in ActionType if a.value != capsule.fallback_action]

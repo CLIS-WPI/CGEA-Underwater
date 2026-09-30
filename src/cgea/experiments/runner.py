@@ -39,6 +39,7 @@ from cgea.governance import (
     PAPER_POLICY_VERSION,
     authority_age,
     classify_freshness,
+    freshness_policy_for_version,
     issue_capsule,
     make_digest,
     reassign_condition_satisfied,
@@ -326,6 +327,9 @@ def run_single(cfg: DictConfig, baseline: str) -> RunMetrics:
             "forbid": [str(x) for x in list(gcfg.get("forbid", []))],
         }
     policy_version = str(cfg.governance.get("policy_version", PAPER_POLICY_VERSION))
+    controller.governor.freshness_policy = freshness_policy_for_version(
+        policy_version, cfg.governance.get("freshness")
+    )
 
     capsules = {
         aid: issue_capsule(

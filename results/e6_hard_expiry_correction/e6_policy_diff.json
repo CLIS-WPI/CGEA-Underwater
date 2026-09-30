@@ -1,0 +1,174 @@
+{
+  "v1": "paper_risk_bounded_v1_2026-09-28",
+  "v2": "paper_risk_bounded_v2_2026-09-30",
+  "v2_differs_only_at": "HARD_EXPIRED LOW_RISK contraction",
+  "bands": {
+    "FRESH": {
+      "v1": {
+        "allowed": [
+          "bounded_path_correction",
+          "collision_avoidance",
+          "hold_station",
+          "local_inference",
+          "reassign_another_auv",
+          "repeat_sonar_scan"
+        ],
+        "conditional": [
+          "reassign_another_auv"
+        ],
+        "forbidden": [
+          "abandon_mandatory_inspection",
+          "change_high_level_objective",
+          "enter_exclusion_zone",
+          "exceed_return_energy_reserve"
+        ],
+        "risk_ceiling": "consequential"
+      },
+      "v2": {
+        "allowed": [
+          "bounded_path_correction",
+          "collision_avoidance",
+          "hold_station",
+          "local_inference",
+          "reassign_another_auv",
+          "repeat_sonar_scan"
+        ],
+        "conditional": [
+          "reassign_another_auv"
+        ],
+        "forbidden": [
+          "abandon_mandatory_inspection",
+          "change_high_level_objective",
+          "enter_exclusion_zone",
+          "exceed_return_energy_reserve"
+        ],
+        "risk_ceiling": "consequential"
+      },
+      "identical": true
+    },
+    "AGING": {
+      "v1": {
+        "allowed": [
+          "bounded_path_correction",
+          "collision_avoidance",
+          "hold_station",
+          "local_inference",
+          "repeat_sonar_scan"
+        ],
+        "conditional": [
+          "reassign_another_auv"
+        ],
+        "forbidden": [
+          "abandon_mandatory_inspection",
+          "change_high_level_objective",
+          "enter_exclusion_zone",
+          "exceed_return_energy_reserve",
+          "reassign_another_auv"
+        ],
+        "risk_ceiling": "consequential"
+      },
+      "v2": {
+        "allowed": [
+          "bounded_path_correction",
+          "collision_avoidance",
+          "hold_station",
+          "local_inference",
+          "repeat_sonar_scan"
+        ],
+        "conditional": [
+          "reassign_another_auv"
+        ],
+        "forbidden": [
+          "abandon_mandatory_inspection",
+          "change_high_level_objective",
+          "enter_exclusion_zone",
+          "exceed_return_energy_reserve",
+          "reassign_another_auv"
+        ],
+        "risk_ceiling": "consequential"
+      },
+      "identical": true
+    },
+    "STALE": {
+      "v1": {
+        "allowed": [
+          "bounded_path_correction",
+          "collision_avoidance",
+          "hold_station",
+          "local_inference",
+          "repeat_sonar_scan"
+        ],
+        "conditional": [],
+        "forbidden": [
+          "abandon_mandatory_inspection",
+          "change_high_level_objective",
+          "enter_exclusion_zone",
+          "exceed_return_energy_reserve",
+          "reassign_another_auv"
+        ],
+        "risk_ceiling": "low"
+      },
+      "v2": {
+        "allowed": [
+          "bounded_path_correction",
+          "collision_avoidance",
+          "hold_station",
+          "local_inference",
+          "repeat_sonar_scan"
+        ],
+        "conditional": [],
+        "forbidden": [
+          "abandon_mandatory_inspection",
+          "change_high_level_objective",
+          "enter_exclusion_zone",
+          "exceed_return_energy_reserve",
+          "reassign_another_auv"
+        ],
+        "risk_ceiling": "low"
+      },
+      "identical": true
+    },
+    "HARD_EXPIRED": {
+      "v1": {
+        "allowed": [
+          "surfacing_safe_mode"
+        ],
+        "conditional": [],
+        "forbidden": [
+          "abandon_mandatory_inspection",
+          "bounded_path_correction",
+          "change_high_level_objective",
+          "collision_avoidance",
+          "enter_exclusion_zone",
+          "exceed_return_energy_reserve",
+          "hold_station",
+          "local_inference",
+          "reassign_another_auv",
+          "repeat_sonar_scan"
+        ],
+        "risk_ceiling": "low"
+      },
+      "v2": {
+        "allowed": [
+          "bounded_path_correction",
+          "collision_avoidance",
+          "hold_station",
+          "local_inference",
+          "repeat_sonar_scan",
+          "surfacing_safe_mode"
+        ],
+        "conditional": [],
+        "forbidden": [
+          "abandon_mandatory_inspection",
+          "change_high_level_objective",
+          "enter_exclusion_zone",
+          "exceed_return_energy_reserve",
+          "reassign_another_auv"
+        ],
+        "risk_ceiling": "low"
+      },
+      "identical": false
+    }
+  },
+  "identical_except_hard_expired": true
+}
